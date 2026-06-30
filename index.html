@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eschaton Wiki - D&D Campaign Workspace</title>
+    <meta name="description" content="A collaborative D&D campaign wiki for the world of Eschaton.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .workspace {
+            overflow-x: hidden;
+        }
+        .local-node-map-container {
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+            background-color: var(--bg-secondary, #171717);
+            border-radius: var(--border-radius, 4px);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .local-node-map-container canvas {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+        }
+        .map-action-btn {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: var(--bg-secondary, #1e1e24);
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+            color: var(--text-primary, #ffffff);
+            padding: 6px 12px;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: all 0.2s ease;
+        }
+        .map-action-btn:hover {
+            background-color: var(--primary-color, #61afef);
+            border-color: var(--primary-color, #61afef);
+            transform: translateY(-1px);
+        }
+        .full-map-card {
+            width: 92vw !important;
+            height: 88vh !important;
+            max-width: none !important;
+            display: flex;
+            flex-direction: column;
+            background: #16161c;
+        }
+        .full-map-body {
+            flex: 1;
+            position: relative;
+            padding: 0 !important;
+            overflow: hidden;
+            background-color: #0b0b0f;
+        }
+        .full-map-body canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Connection Map positioning rules */
+        @media (min-width: 1200px) {
+            .local-node-map-container {
+                top: 40px;
+                right: -260px; /* Floats beautifully in the margin outside the centered document */
+            }
+        }
+        @media (max-width: 1199px) {
+            .local-node-map-container {
+                top: 40px;
+                right: 40px; /* Floats in the top-right of the document canvas area */
+            }
+            .doc-container {
+                padding-right: 280px !important; /* Guard space to prevent document content overlap */
+            }
+        }
+        @media (max-width: 900px) {
+            .local-node-map-container {
+                position: relative;
+                width: 100%;
+                height: 240px;
+                top: 0;
+                right: 0;
+                margin-bottom: 20px;
+            }
+            .doc-container {
+                padding-right: 80px !important; /* Safe mobile fallback padding reset */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================ -->
+    <!--  LOGIN SCREEN                                                -->
+    <!-- ============================================================ -->
+    <div id="login-screen" class="auth-screen">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <i class="fa-solid fa-dragon"></i>
+                <h1>Eschaton Wiki</h1>
+                <p>Sign in to access the campaign notes.</p>
+            </div>
+
+            <!-- Tab switcher -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="auth-tab-login">Sign In</button>
+                <button class="auth-tab" id="auth-tab-register">Request Access</button>
+            </div>
+
+            <!-- Auth error message -->
+            <div class="auth-error hidden" id="auth-error"></div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form" onsubmit="return false;">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Your password" autocomplete="current-password">
+                </div>
+                <button class="auth-submit-btn" id="login-submit-btn" type="button">
+                    Sign In
+                </button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="auth-form hidden" onsubmit="return false;">
+                <div class="form-group">
+                    <label for="register-name">Display Name</label>
+                    <input type="text" id="register-name" placeholder="Your name in the party">
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email" placeholder="you@example.com" autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password</label>
+                    <input type="password" id="register-password" placeholder="Min. 6 characters">
+                </div>
+                <div class="form-group">
+                    <label for="register-confirm">Confirm Password</label>
+                    <input type="password" id="register-confirm" placeholder="Repeat your password">
+                </div>
+                <button class="auth-submit-btn" id="register-submit-btn" type="button">
+                    Request Access
+                </button>
+                <p class="auth-note">Your account will be reviewed by the DM before you can access the wiki.</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  ACCESS PENDING SCREEN                                       -->
+    <!-- ============================================================ -->
+    <div id="pending-screen" class="auth-screen hidden">
+        <div class="auth-card pending-card">
+            <div class="auth-logo">
+                <i class="fa-solid fa-hourglass-half" style="color: var(--text-muted);"></i>
+                <h1>Access Pending</h1>
+                <p>Hello, <strong id="pending-user-name">Adventurer</strong>.</p>
+                <p class="auth-note" style="margin-top: 8px;">Your account has been created but the DM hasn't approved it yet. Check back later or ask them directly!</p>
+            </div>
+            <button class="auth-submit-btn secondary" id="pending-logout-btn">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  MAIN APP                                                    -->
+    <!-- ============================================================ -->
+    <div class="app-container hidden" id="app-container">
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <i class="fa-solid fa-dragon brand-icon"></i>
+                    <span class="brand-name">Eschaton Wiki</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebar-toggle-btn" aria-label="Toggle Sidebar">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+            </div>
+
+            <!-- Search -->
+            <div class="sidebar-search">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Search pages, tags...">
+                </div>
+            </div>
+
+            <!-- Tags -->
+            <div class="tags-section">
+                <div class="section-title">
+                    <span>Tags</span>
+                    <i class="fa-solid fa-tags"></i>
+                </div>
+                <div class="tag-cloud" id="tag-cloud"></div>
+            </div>
+
+            <!-- Page Tree -->
+            <nav class="sidebar-nav">
+                <div class="section-title">
+                    <span>Pages</span>
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <div class="pages-tree" id="pages-tree">
+                    <div class="loading-placeholder">Loading pages...</div>
+                </div>
+            </nav>
+
+            <!-- Footer -->
+            <div class="sidebar-footer">
+                <!-- Account Menu -->
+                <div class="account-menu-wrapper">
+                    <button class="footer-btn account-btn" id="account-menu-btn">
+                        <i class="fa-solid fa-circle-user"></i>
+                        <span id="account-display-name">User</span>
+                        <i class="fa-solid fa-chevron-up" style="margin-left: auto; font-size: 9px;"></i>
+                    </button>
+                    <div class="account-dropdown hidden" id="account-dropdown">
+                        <div class="account-dropdown-header">
+                            <div class="account-name" id="account-display-name-drop"></div>
+                            <div class="account-email" id="account-email"></div>
+                        </div>
+                        <button class="dropdown-item" id="change-name-btn">
+                            <i class="fa-solid fa-pencil"></i> Change Display Name
+                        </button>
+                        <button class="dropdown-item" id="change-password-btn">
+                            <i class="fa-solid fa-lock"></i> Change Password
+                        </button>
+                        <button class="dropdown-item admin-only hidden" id="admin-panel-btn">
+                            <i class="fa-solid fa-shield-halved"></i> Admin Panel
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item settings-item" id="settings-btn">
+                            <i class="fa-solid fa-gear"></i> Storage Settings
+                        </button>
+                        <button class="dropdown-item danger-item" id="logout-btn">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+                        </button>
+                    </div>
+                </div>
+
+                <button class="footer-btn primary-btn" id="new-page-btn">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>New Page</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="workspace" id="workspace">
+            <!-- Floating sidebar expand button -->
+            <button class="sidebar-toggle sidebar-toggle-float hidden" id="sidebar-expand-btn" title="Expand Sidebar">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="empty-state-screen">
+                <i class="fa-solid fa-book-open-reader empty-icon"></i>
+                <h1>Welcome to Eschaton Campaign Wiki</h1>
+                <p>A collaborative campaign bible for the world of Eschaton. Create lore pages, NPC profiles, dungeon notes, and link them all together.</p>
+                <div class="empty-actions">
+                    <button class="action-btn" id="create-first-page-btn">
+                        <i class="fa-solid fa-plus"></i> Create Your First Page
+                    </button>
+                    <button class="action-btn secondary" id="load-sample-btn">
+                        <i class="fa-solid fa-sparkles"></i> Load Sample Campaign
+                    </button>
+                </div>
+            </div>
+
+            <!-- Document Editor -->
+            <div class="doc-container hidden" id="doc-container">
+                <header class="doc-header">
+                    <div class="breadcrumbs" id="doc-breadcrumbs"></div>
+                    <div class="title-row">
+                        <input type="text" id="doc-title-input" class="doc-title-input" placeholder="Untitled Page..." autocomplete="off">
+                        <div class="doc-actions">
+                            <span class="save-status" id="save-status">
+                                <i class="fa-solid fa-circle-check"></i> Saved
+                            </span>
+                            <button class="icon-btn" id="history-btn" title="View Edit History">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </button>
+                            <button class="icon-btn edit-toggle-btn" id="edit-mode-btn" title="Toggle Edit Mode">
+                                <i class="fa-solid fa-pen"></i> Edit
+                            </button>
+                            <button class="icon-btn delete-btn" id="delete-page-btn" title="Delete Page">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="doc-meta-row">
+                        <div class="doc-tags" id="doc-tags-container"></div>
+                        <div class="doc-parent-selector">
+                            <i class="fa-solid fa-folder-tree"></i>
+                            <select id="doc-parent-select">
+                                <option value="">No Parent (Root Page)</option>
+                            </select>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="doc-canvas" id="doc-canvas"></div>
+                
+                <!-- Floating Square Node Map -->
+                <div id="local-node-map-container" class="local-node-map-container">
+                    <canvas id="local-node-canvas"></canvas>
+                    <button id="toggle-full-map-btn" class="map-action-btn" title="View Full Universe Map">
+                        <i class="fa-solid fa-circle-nodes"></i> Universe Map
+                    </button>
+                </div>
+
+                <!-- Template Selector -->
+                <div class="template-selector-overlay hidden" id="template-overlay">
+                    <div class="template-selector-card">
+                        <h3>Choose a Template</h3>
+                        <p>Start with a structured outline, or begin with a blank canvas.</p>
+                        <div class="template-grid">
+                            <div class="template-card-item" data-template="blank">
+                                <div class="template-icon"><i class="fa-regular fa-file"></i></div>
+                                <h4>Blank</h4>
+                                <p>Start from scratch.</p>
+                            </div>
+                            <div class="template-card-item" data-template="npc">
+                                <div class="template-icon"><i class="fa-solid fa-user-shield"></i></div>
+                                <h4>NPC Profile</h4>
+                                <p>Bio, stats, relations, GM notes.</p>
+                            </div>
+                            <div class="template-card-item" data-template="location">
+                                <div class="template-icon"><i class="fa-solid fa-map-location-dot"></i></div>
+                                <h4>Location</h4>
+                                <p>Description, areas, encounters.</p>
+                            </div>
+                            <div class="template-card-item" data-template="faction">
+                                <div class="template-icon"><i class="fa-solid fa-users-viewfinder"></i></div>
+                                <h4>Faction</h4>
+                                <p>Hierarchy, goals, resources.</p>
+                            </div>
+                            <div class="template-card-item" data-template="item">
+                                <div class="template-icon"><i class="fa-solid fa-gem"></i></div>
+                                <h4>Magic Item</h4>
+                                <p>Properties, lore, history.</p>
+                            </div>
+                            <div class="template-card-item" data-template="session">
+                                <div class="template-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                                <h4>Session Log</h4>
+                                <p>Events, loot, threads.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====================================================== -->
+            <!--  HISTORY PANEL (slides in from right)                  -->
+            <!-- ====================================================== -->
+            <div class="history-panel hidden" id="history-panel">
+                <div class="history-panel-header">
+                    <div class="history-panel-title">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        Edit History
+                    </div>
+                    <button class="icon-btn" id="close-history-btn">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="history-list" id="history-list">
+                    <!-- History entries injected here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  FULL UNIVERSE MAP MODAL                                     -->
+    <!-- ============================================================ -->
+    <div class="modal-overlay hidden" id="full-map-modal">
+        <div class="modal-card full-map-card">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-circle-nodes"></i> Campaign Connection Cosmos</h2>
+                <button class="close-modal-btn" id="close-full-map-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body full-map-body">
+                <canvas id="full-universe-canvas"></canvas>
+                <div class="map-instructions">
+                    <p><i class="fa-solid fa-info-circle"></i> Drag to Pan &bull; Scroll to Zoom &bull; Single-click Node to Navigate</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  ADMIN PANEL MODAL                                           -->
+    <!-- ============================================================ -->
+    <div class="modal-overlay hidden" id="admin-modal">
+        <div class="modal-card admin-modal-card">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-shield-halved"></i> Admin Panel</h2>
+                <button class="close-modal-btn" id="close-admin-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="settings-desc">Manage player access to the Eschaton Wiki. Players who register are pending by default until you approve them.</p>
+                <div id="admin-panel-content">
+                    <!-- Rendered by admin.js -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  STORAGE SETTINGS MODAL                                      -->
+    <!-- ============================================================ -->
+    <div class="modal-overlay hidden" id="settings-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-download"></i> Backup & Sync</h2>
+                <button class="close-modal-btn" id="close-settings-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="tab-content" id="settings-backup-content">
+                    <p class="settings-desc">Export your campaign wiki as a backup file or restore from a previous export.</p>
+                    <div class="backup-actions">
+                        <button class="action-btn" id="export-backup-btn">
+                            <i class="fa-solid fa-download"></i> Export Backup (.json)
+                        </button>
+                        <button class="action-btn secondary" id="import-trigger-btn">
+                            <i class="fa-solid fa-upload"></i> Import Backup
+                        </button>
+                        <input type="file" id="import-backup-file" accept=".json" class="hidden">
+                    </div>
+                    <div class="warning-alert">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Importing will overwrite all current pages. Export a backup first!</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn secondary" id="cancel-settings-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wiki Link Autocomplete Popover -->
+    <div class="autocomplete-popover hidden" id="autocomplete-popover">
+        <ul class="autocomplete-list" id="autocomplete-list"></ul>
+    </div>
+
+    <!-- Firebase SDK Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
+            }
+        }
+    </script>
+
+    <script type="module" src="src/app.js"></script>
+</body>
+</html>

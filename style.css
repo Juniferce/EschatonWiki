@@ -513,6 +513,12 @@ body {
     border-color: var(--text-accent);
 }
 
+.sidebar-footer .edit-toggle-btn.active {
+    background-color: rgba(154, 123, 247, 0.15);
+    border-color: var(--text-accent);
+    color: var(--text-accent);
+}
+
 .icon-btn.delete-btn:hover {
     border-color: #ef4444;
     color: #ef4444;

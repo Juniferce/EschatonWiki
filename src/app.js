@@ -34,14 +34,6 @@ async function onLoggedIn(firebaseUser, userProfile) {
     // Show/hide admin button
     const adminBtn = document.getElementById("admin-panel-btn");
     if (adminBtn) adminBtn.classList.toggle("hidden", !isAdmin());
-    
-    // Relocate global edit mode button to sidebar footer
-    const editBtn = document.getElementById("edit-mode-btn");
-    const sidebarFooter = document.querySelector(".sidebar-footer");
-    if (editBtn && sidebarFooter) {
-        editBtn.className = "footer-btn edit-toggle-btn";
-        sidebarFooter.insertBefore(editBtn, sidebarFooter.firstChild);
-    }
 
     // Initialize global edit/viewer mode state & button styling
     updateGlobalEditButtonUI();

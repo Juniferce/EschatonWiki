@@ -235,41 +235,46 @@
 
             <!-- Footer -->
             <div class="sidebar-footer">
-                <!-- Account Menu -->
-                <div class="account-menu-wrapper">
-                    <button class="footer-btn account-btn" id="account-menu-btn">
-                        <i class="fa-solid fa-circle-user"></i>
-                        <span id="account-display-name">User</span>
-                        <i class="fa-solid fa-chevron-up" style="margin-left: auto; font-size: 9px;"></i>
-                    </button>
-                    <div class="account-dropdown hidden" id="account-dropdown">
-                        <div class="account-dropdown-header">
-                            <div class="account-name" id="account-display-name-drop"></div>
-                            <div class="account-email" id="account-email"></div>
-                        </div>
-                        <button class="dropdown-item" id="change-name-btn">
-                            <i class="fa-solid fa-pencil"></i> Change Display Name
-                        </button>
-                        <button class="dropdown-item" id="change-password-btn">
-                            <i class="fa-solid fa-lock"></i> Change Password
-                        </button>
-                        <button class="dropdown-item admin-only hidden" id="admin-panel-btn">
-                            <i class="fa-solid fa-shield-halved"></i> Admin Panel
-                        </button>
-                        <div class="dropdown-divider"></div>
-                        <button class="dropdown-item settings-item" id="settings-btn">
-                            <i class="fa-solid fa-gear"></i> Storage Settings
-                        </button>
-                        <button class="dropdown-item danger-item" id="logout-btn">
-                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
-                        </button>
-                    </div>
-                </div>
-
-                <button class="footer-btn primary-btn" id="new-page-btn">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>New Page</span>
+                <button class="footer-btn edit-toggle-btn" id="edit-mode-btn" title="Toggle Edit Mode">
+                    <i class="fa-solid fa-pen"></i> Edit
                 </button>
+                <div class="sidebar-footer-row">
+                    <!-- Account Menu -->
+                    <div class="account-menu-wrapper">
+                        <button class="footer-btn account-btn" id="account-menu-btn">
+                            <i class="fa-solid fa-circle-user"></i>
+                            <span id="account-display-name">User</span>
+                            <i class="fa-solid fa-chevron-up" style="margin-left: auto; font-size: 9px;"></i>
+                        </button>
+                        <div class="account-dropdown hidden" id="account-dropdown">
+                            <div class="account-dropdown-header">
+                                <div class="account-name" id="account-display-name-drop"></div>
+                                <div class="account-email" id="account-email"></div>
+                            </div>
+                            <button class="dropdown-item" id="change-name-btn">
+                                <i class="fa-solid fa-pencil"></i> Change Display Name
+                            </button>
+                            <button class="dropdown-item" id="change-password-btn">
+                                <i class="fa-solid fa-lock"></i> Change Password
+                            </button>
+                            <button class="dropdown-item admin-only hidden" id="admin-panel-btn">
+                                <i class="fa-solid fa-shield-halved"></i> Admin Panel
+                            </button>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item settings-item" id="settings-btn">
+                                <i class="fa-solid fa-gear"></i> Storage Settings
+                            </button>
+                            <button class="dropdown-item danger-item" id="logout-btn">
+                                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="footer-btn primary-btn" id="new-page-btn">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>New Page</span>
+                    </button>
+                </div>
             </div>
         </aside>
 
@@ -307,9 +312,6 @@
                             </span>
                             <button class="icon-btn" id="history-btn" title="View Edit History">
                                 <i class="fa-solid fa-clock-rotate-left"></i>
-                            </button>
-                            <button class="icon-btn edit-toggle-btn" id="edit-mode-btn" title="Toggle Edit Mode">
-                                <i class="fa-solid fa-pen"></i> Edit
                             </button>
                             <button class="icon-btn delete-btn" id="delete-page-btn" title="Delete Page">
                                 <i class="fa-solid fa-trash-can"></i>

@@ -295,7 +295,7 @@ function bindAppEvents() {
             activePageId = null;
             await deletePage(id);
             const pages = await getPages();
-            if (pages.length > 0) changeActivePage(pages[0].id, false);
+            if (pages.length > 0) changeActivePage(pages[0].id, null);
             else refreshAppView();
         }
     });
@@ -347,7 +347,7 @@ function bindAppEvents() {
     });
 
     window.addEventListener("eschaton_page_change", (e) => {
-        if (e.detail?.pageId) changeActivePage(e.detail.pageId, false);
+        if (e.detail?.pageId) changeActivePage(e.detail.pageId, null);
     });
 }
 

@@ -20,16 +20,6 @@ export async function renderEditor(pageId, editMode = false) {
     
     isEditMode = editMode;
     
-    // Toggle edit mode button state
-    const editBtn = document.getElementById("edit-mode-btn");
-    if (isEditMode) {
-        editBtn.classList.add("active");
-        editBtn.innerHTML = `<i class="fa-solid fa-eye"></i> View`;
-    } else {
-        editBtn.classList.remove("active");
-        editBtn.innerHTML = `<i class="fa-solid fa-pen"></i> Edit`;
-    }
-
     if (!pageId) {
         container.classList.add("hidden");
         emptyScreen.classList.remove("hidden");
@@ -53,13 +43,19 @@ export async function renderEditor(pageId, editMode = false) {
 
     // Render tags
     renderPageTags();
+    
+    // Render Aliases
+    renderPageAliases();
+    
+    // Render References
+    renderPageReferences();
 
     // Render blocks
     canvas.innerHTML = "";
     
     if (activePage.blocks.length === 0) {
         // Show template selector overlay if page is blank
-        document.getElementById("template-overlay").classList.remove("hidden");
+        renderTemplateSelector();
     } else {
         document.getElementById("template-overlay").classList.add("hidden");
         
@@ -119,6 +115,127 @@ function renderPageTags() {
             }
         });
         tagsContainer.appendChild(tagInput);
+    }
+}
+
+// Render dynamic aliases badges
+function renderPageAliases() {
+    let aliasesContainer = document.getElementById("doc-aliases-container");
+    const tagsContainer = document.getElementById("doc-tags-container");
+    if (!aliasesContainer && tagsContainer) {
+        aliasesContainer = document.createElement("div");
+        aliasesContainer.id = "doc-aliases-container";
+        aliasesContainer.className = "doc-aliases";
+        tagsContainer.after(aliasesContainer);
+    }
+    if (!aliasesContainer) return;
+    aliasesContainer.innerHTML = "";
+    
+    const aliases = activePage.aliases || [];
+    aliases.forEach(alias => {
+        const badge = document.createElement("span");
+        badge.className = "doc-alias-badge";
+        badge.innerHTML = `
+            ~${alias}
+            ${isEditMode ? `<i class="fa-solid fa-xmark remove-alias-btn" data-alias="${alias}"></i>` : ""}
+        `;
+        
+        if (isEditMode) {
+            badge.querySelector(".remove-alias-btn").addEventListener("click", () => {
+                activePage.aliases = activePage.aliases.filter(a => a !== alias);
+                renderPageAliases();
+                autoSave();
+            });
+        }
+        aliasesContainer.appendChild(badge);
+    });
+
+    if (isEditMode) {
+        const aliasInput = document.createElement("input");
+        aliasInput.type = "text";
+        aliasInput.className = "doc-alias-editor-input";
+        aliasInput.placeholder = "+ Add alias";
+        
+        aliasInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && aliasInput.value.trim()) {
+                const newAlias = aliasInput.value.trim();
+                if (newAlias) {
+                    if (!activePage.aliases) activePage.aliases = [];
+                    if (!activePage.aliases.includes(newAlias)) {
+                        activePage.aliases.push(newAlias);
+                        renderPageAliases();
+                        autoSave();
+                    }
+                }
+                aliasInput.value = "";
+            }
+        });
+        aliasesContainer.appendChild(aliasInput);
+    }
+}
+
+// Render parent references badges
+async function renderPageReferences() {
+    let referencesContainer = document.getElementById("doc-references-container");
+    const aliasesContainer = document.getElementById("doc-aliases-container");
+    if (!referencesContainer && aliasesContainer) {
+        referencesContainer = document.createElement("div");
+        referencesContainer.id = "doc-references-container";
+        referencesContainer.className = "doc-references";
+        aliasesContainer.after(referencesContainer);
+    }
+    if (!referencesContainer) return;
+    referencesContainer.innerHTML = "";
+
+    const pages = await getPages();
+    const references = activePage.references || [];
+
+    references.forEach(refParentId => {
+        const parentPage = pages.find(p => p.id === refParentId);
+        const parentTitle = parentPage ? parentPage.title : "Root / Unknown";
+
+        const badge = document.createElement("span");
+        badge.className = "doc-reference-badge";
+        badge.innerHTML = `
+            <i class="fa-solid fa-folder-tree"></i> In: ${parentTitle}
+            ${isEditMode ? `<i class="fa-solid fa-xmark remove-reference-btn" data-ref="${refParentId}"></i>` : ""}
+        `;
+
+        if (isEditMode) {
+            badge.querySelector(".remove-reference-btn").addEventListener("click", () => {
+                activePage.references = activePage.references.filter(r => r !== refParentId);
+                renderPageReferences();
+                autoSave();
+            });
+        }
+        referencesContainer.appendChild(badge);
+    });
+
+    if (isEditMode) {
+        const refSelect = document.createElement("select");
+        refSelect.className = "doc-reference-editor-select";
+        refSelect.innerHTML = `<option value="">+ Add Reference Folder</option>`;
+        
+        pages.sort((a, b) => a.title.localeCompare(b.title));
+        pages.forEach(p => {
+            if (p.id !== activePage.id && p.id !== activePage.parentId && !references.includes(p.id)) {
+                const opt = document.createElement("option");
+                opt.value = p.id;
+                opt.innerText = p.title || "Untitled Page";
+                refSelect.appendChild(opt);
+            }
+        });
+
+        refSelect.addEventListener("change", (e) => {
+            const val = e.target.value;
+            if (val) {
+                if (!activePage.references) activePage.references = [];
+                activePage.references.push(val);
+                renderPageReferences();
+                autoSave();
+            }
+        });
+        referencesContainer.appendChild(refSelect);
     }
 }
 
@@ -479,6 +596,8 @@ function insertBlockAtIndex(index, type) {
     else if (type === "callout") content = "Enter important notes or lore secrets here...";
     else if (type === "list-checkbox") content = "[ ] Task item description...";
     else if (type === "paragraph") content = "Click to write notes...";
+    else if (type === "list-bullet") content = "List bullet item...";
+    else if (type === "list-numbered") content = "Numbered item...";
     
     const newBlock = {
         id: "b_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
@@ -577,7 +696,11 @@ async function handleAutocompleteTrigger(e, element, blockId) {
         
         // Search & filter pages
         const pages = await getPages();
-        const matches = pages.filter(p => p.title.toLowerCase().includes(query.toLowerCase()));
+        const matches = pages.filter(p => {
+            const matchesTitle = p.title.toLowerCase().includes(query.toLowerCase());
+            const matchesAlias = p.aliases && p.aliases.some(a => a.toLowerCase().includes(query.toLowerCase()));
+            return matchesTitle || matchesAlias;
+        });
         renderAutocompleteList(matches, element, query);
     }
 }
@@ -611,11 +734,17 @@ function renderAutocompleteList(matches, targetElement, query) {
     matches.slice(0, 5).forEach((match, idx) => {
         const li = document.createElement("li");
         li.className = `autocomplete-item ${idx === 0 ? "selected" : ""}`;
-        li.innerHTML = `<i class="fa-solid fa-file-invoice"></i> <span>${match.title}</span>`;
+        
+        let displayTitle = match.title;
+        const matchingAlias = match.aliases?.find(a => a.toLowerCase().includes(query.toLowerCase()));
+        if (matchingAlias) {
+            displayTitle = `${match.title} (~${matchingAlias})`;
+        }
+        li.innerHTML = `<i class="fa-solid fa-file-invoice"></i> <span>${displayTitle}</span>`;
         
         li.addEventListener("mousedown", (e) => {
             e.preventDefault();
-            insertWikiLink(match.title, match.id, targetElement);
+            insertWikiLink(matchingAlias || match.title, match.id, targetElement);
         });
         list.appendChild(li);
     });
@@ -648,4 +777,60 @@ function insertWikiLink(pageTitle, pageId, element) {
         }, 10);
     }
     hideAutocompletePopover();
+}
+
+async function renderTemplateSelector() {
+    const overlay = document.getElementById("template-overlay");
+    if (!overlay) return;
+    overlay.classList.remove("hidden");
+
+    const grid = overlay.querySelector(".template-grid");
+    if (!grid) return;
+    grid.innerHTML = "";
+
+    // Add a default "Blank Page" option
+    const blankCard = document.createElement("div");
+    blankCard.className = "template-card-item";
+    blankCard.innerHTML = `
+        <div class="template-icon"><i class="fa-solid fa-file"></i></div>
+        <h4>Blank Page</h4>
+        <p>Start with a completely empty canvas.</p>
+    `;
+    blankCard.addEventListener("click", async () => {
+        activePage.blocks = [
+            { id: "b_" + Date.now() + "_1", type: "h1", content: "New Page Title" },
+            { id: "b_" + Date.now() + "_2", type: "paragraph", content: "Start writing here..." }
+        ];
+        await savePage(activePage);
+        overlay.classList.add("hidden");
+        renderEditor(activePage.id, isEditMode);
+    });
+    grid.appendChild(blankCard);
+
+    // Fetch customizable Template pages from Firestore
+    const pages = await getPages();
+    const templates = pages.filter(p => p.tags && p.tags.includes("Template"));
+
+    templates.forEach(tpl => {
+        const card = document.createElement("div");
+        card.className = "template-card-item";
+        card.innerHTML = `
+            <div class="template-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <h4>${tpl.title || "Untitled Template"}</h4>
+            <p>Use blocks from this custom template.</p>
+        `;
+        card.addEventListener("click", async () => {
+            activePage.blocks = tpl.blocks.map((block, idx) => ({
+                id: "b_" + Date.now() + "_" + idx + "_" + Math.floor(Math.random() * 1000),
+                type: block.type,
+                content: block.content
+            }));
+            activePage.title = tpl.title;
+            activePage.tags = (tpl.tags || []).filter(t => t !== "Template");
+            await savePage(activePage);
+            overlay.classList.add("hidden");
+            renderEditor(activePage.id, isEditMode);
+        });
+        grid.appendChild(card);
+    });
 }

@@ -34,15 +34,32 @@ async function onLoggedIn(firebaseUser, userProfile) {
     // Show/hide admin button
     const adminBtn = document.getElementById("admin-panel-btn");
     if (adminBtn) adminBtn.classList.toggle("hidden", !isAdmin());
+    
+    // Initialize global edit/viewer mode state & button styling
+    updateGlobalEditButtonUI();
 
     // Initialize wiki
     initSidebar();
     initMaps();
     bindAppEvents();
 
-    // Seed sample data if Firestore is empty
+    // Seed sample data and Template page if Firestore is empty
     let pages = await getPages();
     if (pages.length === 0) {
+        // Add initial welcome templates
+        SAMPLE_PAGES.push({
+            id: "template-npc-default",
+            title: "NPC Profile Template",
+            parentId: "",
+            tags: ["Template"],
+            blocks: [
+                { id: "b1", type: "h1", content: "NPC Name" },
+                { id: "b2", type: "paragraph", content: "Brief description..." },
+                { id: "b3", type: "h2", content: "Appearance" },
+                { id: "b4", type: "paragraph", content: "Details here..." }
+            ],
+            updatedAt: Date.now()
+        });
         await restoreDatabase(SAMPLE_PAGES);
         pages = await getPages();
     }
@@ -261,10 +278,14 @@ function friendlyAuthError(code) {
 // --- Wiki App Events ---
 
 function bindAppEvents() {
-    document.getElementById("edit-mode-btn").addEventListener("click", () => {
+    const editBtn = document.getElementById("edit-mode-btn");
+    editBtn.addEventListener("click", () => {
         isEditMode = !isEditMode;
         if (!isEditMode) autoSave();
-        renderEditor(activePageId, isEditMode);
+        updateGlobalEditButtonUI();
+        if (activePageId) {
+            renderEditor(activePageId, isEditMode);
+        }
     });
 
     document.getElementById("delete-page-btn").addEventListener("click", async () => {
@@ -281,14 +302,6 @@ function bindAppEvents() {
 
     document.getElementById("new-page-btn").addEventListener("click", createNewPage);
     document.getElementById("create-first-page-btn").addEventListener("click", createNewPage);
-
-    document.getElementById("load-sample-btn").addEventListener("click", async () => {
-        if (confirm("Load sample campaign data? This will add introductory NPC and Location pages.")) {
-            await restoreDatabase(SAMPLE_PAGES);
-            const pages = await getPages();
-            changeActivePage(pages[0].id, false);
-        }
-    });
 
     document.getElementById("doc-parent-select").addEventListener("change", async (e) => {
         if (!activePageId) return;
@@ -309,27 +322,6 @@ function bindAppEvents() {
     });
     titleInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") titleInput.blur();
-    });
-
-    document.querySelectorAll(".template-card-item").forEach(card => {
-        card.addEventListener("click", async () => {
-            if (!activePageId) return;
-            const page = await getPage(activePageId);
-            if (!page) return;
-
-            page.blocks = getTemplateBlocks(card.dataset.template);
-            const titles = { npc: "New NPC", location: "New Location", faction: "New Faction", item: "New Item", session: "Session Log" };
-            const tags = { npc: ["NPC", "Character"], location: ["Location"], faction: ["Faction"], item: ["Item"], session: ["Session-Log"] };
-            if (card.dataset.template !== "blank") {
-                page.title = titles[card.dataset.template] || "New Page";
-                page.tags = tags[card.dataset.template] || [];
-            }
-
-            await savePage(page);
-            document.getElementById("template-overlay").classList.add("hidden");
-            isEditMode = true;
-            changeActivePage(page.id, true);
-        });
     });
 
     // History panel open button
@@ -366,9 +358,22 @@ async function createNewPage() {
     changeActivePage(newId, true);
 }
 
-async function changeActivePage(pageId, editMode = false) {
+function updateGlobalEditButtonUI() {
+    const editBtn = document.getElementById("edit-mode-btn");
+    if (editBtn) {
+        editBtn.classList.toggle("active", isEditMode);
+        editBtn.innerHTML = isEditMode
+            ? `<i class="fa-solid fa-eye"></i> View`
+            : `<i class="fa-solid fa-pen"></i> Edit`;
+    }
+}
+
+async function changeActivePage(pageId, forceEditMode = null) {
     activePageId = pageId;
-    isEditMode = editMode;
+    if (forceEditMode !== null) {
+        isEditMode = forceEditMode;
+        updateGlobalEditButtonUI();
+    }
     closeHistoryPanel();
 
     // Silently update standard browser hash state for bookmarking

@@ -4,11 +4,38 @@
 */
 
 export function getConnections(pages) {
-    const nodes = pages.map(p => ({
-        id: p.id,
-        title: p.title || "Untitled Page",
-        tags: p.tags || []
-    }));
+    const nodes = [];
+    const nodeMapByPageId = new Map(); // pageId -> array of map nodes
+
+    // Create nodes (including reference nodes)
+    pages.forEach(p => {
+        const mainNode = {
+            id: p.id,
+            pageId: p.id,
+            title: p.title || "Untitled Page",
+            tags: p.tags || [],
+            parentId: p.parentId || null,
+            isReference: false
+        };
+        nodes.push(mainNode);
+        nodeMapByPageId.set(p.id, [mainNode]);
+
+        if (p.references) {
+            p.references.forEach(refParentId => {
+                const refNodeId = `${p.id}_ref_${refParentId}`;
+                const refNode = {
+                    id: refNodeId,
+                    pageId: p.id,
+                    title: `${p.title || "Untitled Page"} (Ref)`,
+                    tags: p.tags || [],
+                    parentId: refParentId,
+                    isReference: true
+                };
+                nodes.push(refNode);
+                nodeMapByPageId.get(p.id).push(refNode);
+            });
+        }
+    });
 
     const edges = [];
     const addedEdges = new Set();
@@ -22,24 +49,30 @@ export function getConnections(pages) {
         }
     };
 
+    // Map folderGroups and hierarchy connections (allowing empty folder groups if designated)
     pages.forEach(p => {
-        // Add parentId to node for easier lookup in map
-        const node = nodes.find(n => n.id === p.id);
-        if (node) node.parentId = p.parentId || null;
-
-        // Hierarchy connections
-        if (p.parentId) {
-            const parentExists = pages.some(parent => parent.id === p.parentId);
-            if (parentExists) {
-                if (!folderGroups.has(p.parentId)) {
-                    folderGroups.set(p.parentId, []);
-                }
-                folderGroups.get(p.parentId).push(p.id);
-                addEdge(p.id, p.parentId, "hierarchy");
+        if (p.tags && p.tags.includes("Folder")) {
+            if (!folderGroups.has(p.id)) {
+                folderGroups.set(p.id, []);
             }
         }
+    });
 
-        // Content hyperlinks parser
+    nodes.forEach(node => {
+        if (node.parentId) {
+            const parentExists = pages.some(parent => parent.id === node.parentId);
+            if (parentExists) {
+                if (!folderGroups.has(node.parentId)) {
+                    folderGroups.set(node.parentId, []);
+                }
+                folderGroups.get(node.parentId).push(node.id);
+                addEdge(node.id, node.parentId, "hierarchy");
+            }
+        }
+    });
+
+    // Content hyperlinks parser with connection splitting to prevent distraction
+    pages.forEach(p => {
         if (p.blocks) {
             p.blocks.forEach(b => {
                 if (b.content) {
@@ -49,7 +82,24 @@ export function getConnections(pages) {
                         const targetId = match[1];
                         const targetExists = pages.some(target => target.id === targetId);
                         if (targetExists && targetId !== p.id) {
-                            addEdge(p.id, targetId, "link");
+                            const sourceNodes = nodeMapByPageId.get(p.id) || [];
+                            const targetNodes = nodeMapByPageId.get(targetId) || [];
+                            
+                            let edgeAdded = false;
+                            for (const sNode of sourceNodes) {
+                                for (const tNode of targetNodes) {
+                                    if (sNode.parentId && sNode.parentId === tNode.parentId) {
+                                        addEdge(sNode.id, tNode.id, "link");
+                                        edgeAdded = true;
+                                        break;
+                                    }
+                                }
+                                if (edgeAdded) break;
+                            }
+                            
+                            if (!edgeAdded) {
+                                addEdge(p.id, targetId, "link");
+                            }
                         }
                     }
                 }
@@ -204,7 +254,7 @@ export class InteractiveMap {
             const mousePos = this.getTransformedMousePos(e);
             const clickedNode = this.getNodeAt(mousePos.x, mousePos.y);
             if (clickedNode) {
-                this.onNodeClick(clickedNode.id);
+                this.onNodeClick(clickedNode.pageId || clickedNode.id);
             }
         });
 

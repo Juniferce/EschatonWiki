@@ -116,8 +116,9 @@ export async function refreshSidebar(activeId = activePageId) {
         filteredPages = pages.filter(p => {
             const inTitle = p.title.toLowerCase().includes(searchQuery);
             const inTags = p.tags && p.tags.some(t => t.toLowerCase().includes(searchQuery));
+            const inAliases = p.aliases && p.aliases.some(a => a.toLowerCase().includes(searchQuery));
             const inContent = p.blocks && p.blocks.some(b => b.content.toLowerCase().includes(searchQuery));
-            return inTitle || inTags || inContent;
+            return inTitle || inTags || inAliases || inContent;
         });
     }
 
@@ -139,21 +140,36 @@ export async function refreshSidebar(activeId = activePageId) {
     // Render flat list if searching (since structure hierarchy is broken during filter)
     if (isSearching) {
         filteredPages.forEach(page => {
-            const item = createTreeNodeElement(page, 0, false);
+            const item = createTreeNodeElement(page, 0, false, false);
             tree.appendChild(item);
         });
     } else {
         // Render tree structure (Nested parents)
         const rootNodes = pages.filter(p => !p.parentId || !pages.some(parent => parent.id === p.parentId));
         
-        const renderNode = (node, depth = 0) => {
-            const children = pages.filter(p => p.parentId === node.id);
-            const hasChildren = children.length > 0;
-            const nodeEl = createTreeNodeElement(node, depth, hasChildren);
+        const renderNode = (node, depth = 0, renderedInPath = new Set(), isReference = false) => {
+            const directChildren = pages.filter(p => p.parentId === node.id).map(p => ({ child: p, isRef: false }));
+            const referencedChildren = pages.filter(p => p.references && p.references.includes(node.id)).map(p => ({ child: p, isRef: true }));
+            
+            const combinedChildren = [...directChildren];
+            referencedChildren.forEach(rc => {
+                if (!combinedChildren.some(dc => dc.child.id === rc.child.id)) {
+                    combinedChildren.push(rc);
+                }
+            });
+            
+            const hasChildren = combinedChildren.length > 0;
+            const nodeEl = createTreeNodeElement(node, depth, hasChildren, isReference);
             tree.appendChild(nodeEl);
 
             if (hasChildren && expandedNodes.has(node.id)) {
-                children.forEach(child => renderNode(child, depth + 1));
+                if (!renderedInPath.has(node.id)) {
+                    const newPath = new Set(renderedInPath);
+                    newPath.add(node.id);
+                    combinedChildren.forEach(({ child, isRef }) => {
+                        renderNode(child, depth + 1, newPath, isRef);
+                    });
+                }
             }
         };
 
@@ -162,7 +178,7 @@ export async function refreshSidebar(activeId = activePageId) {
 }
 
 // Generate HTML elements for tree nodes
-function createTreeNodeElement(page, depth, hasChildren) {
+function createTreeNodeElement(page, depth, hasChildren, isReference = false) {
     const nodeEl = document.createElement("div");
     nodeEl.className = "tree-node";
 
@@ -214,7 +230,11 @@ function createTreeNodeElement(page, depth, hasChildren) {
         iconClass = "fa-solid fa-folder-open";
     }
 
-    icon.innerHTML = `<i class="${iconClass}"></i>`;
+    let innerIcon = `<i class="${iconClass}"></i>`;
+    if (isReference) {
+        innerIcon = `<i class="fa-solid fa-link" style="font-size: 9px; opacity: 0.8; margin-right: 2px;" title="Reference Folder Link"></i>` + innerIcon;
+    }
+    icon.innerHTML = innerIcon;
     item.appendChild(icon);
 
     // Title

@@ -1,1258 +1,884 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Eschaton Wiki</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            eschaton: {
-              50: '#f5f3ff',
-              100: '#ede9fe',
-              500: '#8b5cf6',
-              600: '#7c3aed',
-              700: '#6d28d9',
-              900: '#3b0764',
-            },
-            darkbg: '#0b0c10',
-            darksurface: '#12141d',
-            darkcard: '#1a1d2b',
-            darkborder: '#282c42'
-          },
-          fontFamily: {
-            mono: ['JetBrains Mono', 'Menlo', 'monospace'],
-            sans: ['Inter', 'system-ui', 'sans-serif']
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eschaton Wiki</title>
+
+    <style>
+        /* Ultra-barebones, crisp monochrome styling */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-      }
-    }
-  </script>
 
-  <!-- FontAwesome Icons CDN -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- React 18 & ReactDOM 18 CDN -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  
-  <!-- Babel for JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #ffffff;
+            color: #111111;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 13px;
+            line-height: 1.5;
+        }
 
-  <!-- Firebase Setup module script -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { 
-      getAuth, 
-      createUserWithEmailAndPassword, 
-      signInWithEmailAndPassword, 
-      signOut, 
-      onAuthStateChanged 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { 
-      getFirestore, 
-      doc, 
-      getDoc, 
-      setDoc, 
-      updateDoc, 
-      deleteDoc, 
-      onSnapshot, 
-      collection, 
-      query, 
-      serverTimestamp 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        /* Controls & Inputs */
+        button {
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 5px 10px;
+            background-color: #ffffff;
+            color: #111111;
+            border: 1px solid #111111;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background 0.1s ease;
+        }
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBeYN6lMzYt_yIMuJVfB_j7eYAD0DRjK9s",
-      authDomain: "eschaton-wiki.firebaseapp.com",
-      projectId: "eschaton-wiki",
-      storageBucket: "eschaton-wiki.firebasestorage.app",
-      messagingSenderId: "614710548622",
-      appId: "1:614710548622:web:b2f8d13f3866cda6fe11df"
-    };
+        button:hover {
+            background-color: #f0f0f0;
+        }
 
-    try {
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
-      window.FirebaseServices = {
-        app, auth, db,
-        createUserWithEmailAndPassword,
-        signInWithEmailAndPassword,
-        signOut,
-        onAuthStateChanged,
-        doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, serverTimestamp,
-        isAvailable: true
-      };
-      console.log("Firebase initialized successfully for Eschaton Wiki");
-    } catch (err) {
-      console.warn("Firebase Init Fallback Mode Enabled:", err);
-      window.FirebaseServices = { isAvailable: false, error: err.message };
-    }
-  </script>
+        button:disabled {
+            border-color: #ccc;
+            color: #888;
+            cursor: not-allowed;
+            background-color: #fafafa;
+        }
 
-  <style>
-    /* Custom Scrollbar for Obsidian aesthetic */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #0b0c10;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #282c42;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #8b5cf6;
-    }
-    
-    .editor-textarea {
-      tab-size: 2;
-    }
-  </style>
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        textarea {
+            font-family: inherit;
+            font-size: 13px;
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background-color: #ffffff;
+            color: #111111;
+            outline: none;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #111111;
+        }
+
+        /* Header Bar */
+        header {
+            height: 44px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            background-color: #fafafa;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            font-size: 13px;
+        }
+
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+        }
+
+        .status-approved {
+            border-color: #111111;
+            background-color: #111111;
+            color: #ffffff;
+        }
+
+        .status-pending {
+            border-color: #d97706;
+            color: #b45309;
+            background-color: #fffbeb;
+        }
+
+        /* Read-Only Banner */
+        .banner {
+            background-color: #fffbeb;
+            border-bottom: 1px solid #fde68a;
+            color: #92400e;
+            padding: 6px 16px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Main Workspace */
+        .workspace {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Left Sidebar */
+        sidebar {
+            width: 240px;
+            border-right: 1px solid #e0e0e0;
+            background-color: #fafafa;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+        }
+
+        .page-list {
+            list-style: none;
+            overflow-y: auto;
+            flex: 1;
+            padding: 4px 0;
+        }
+
+        .page-item {
+            padding: 8px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #444;
+            border-left: 3px solid transparent;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .page-item:hover {
+            background-color: #f0f0f0;
+            color: #111;
+        }
+
+        .page-item.active {
+            background-color: #ffffff;
+            border-left-color: #111111;
+            font-weight: 600;
+            color: #111;
+        }
+
+        /* Editor Canvas */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+            overflow: hidden;
+        }
+
+        .editor-top {
+            padding: 16px 20px 8px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .editor-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #666;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
+
+        .title-input {
+            font-size: 20px;
+            font-weight: 700;
+            border: none;
+            border-bottom: 1px solid transparent;
+            border-radius: 0;
+            padding: 4px 0;
+            width: 100%;
+        }
+
+        .title-input:focus {
+            border-bottom-color: #111111;
+        }
+
+        .editor-body {
+            flex: 1;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content-textarea {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            border: none;
+            resize: none;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #222;
+        }
+
+        .content-textarea:disabled,
+        .title-input:disabled {
+            background-color: #ffffff;
+            color: #777777;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888888;
+            font-size: 13px;
+        }
+
+        /* Modals & Popups */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal {
+            background-color: #ffffff;
+            border: 1px solid #111111;
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .modal-title {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .user-table th,
+        .user-table td {
+            border: 1px solid #e0e0e0;
+            padding: 6px 8px;
+            text-align: left;
+        }
+
+        .user-table th {
+            background-color: #fafafa;
+            font-weight: 600;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            background-color: #111111;
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 3px;
+            font-size: 12px;
+            z-index: 200;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+
+    <!-- Firebase v10 Compat SDK (Reliable for vanilla single-file applications) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
-<body class="bg-darkbg text-slate-200 font-sans antialiased selection:bg-eschaton-600 selection:text-white min-h-screen flex flex-col overflow-hidden">
 
-  <div id="root" class="h-screen flex flex-col"></div>
+<body>
 
-  <script type="babel">
-    const { useState, useEffect, useRef, useMemo } = React;
+    <!-- Header Nav -->
+    <header>
+        <div class="brand">ESCHATON WIKI</div>
 
-    // Default Seed Data for Campaign Notes
-    const INITIAL_NOTES = [
-      {
-        id: "note-1",
-        title: "The Shattered Crown of Eschaton",
-        category: "Lore",
-        tags: ["Artifact", "Lore", "Cataclysm"],
-        author: "Game Master",
-        updatedAt: "2026-10-31 14:20",
-        content: `# The Shattered Crown of Eschaton
+        <div class="user-actions">
+            <span id="user-display" class="status-badge">Not Signed In</span>
+            <span id="approval-badge" class="status-badge status-pending hidden">Pending Approval</span>
 
-The **Shattered Crown** was created during the First Age of Dawn by the High Mages of Nevareth. It was designed to anchor the realm's planar ley lines and prevent abyssal tearing.
+            <button id="admin-btn" class="hidden" onclick="toggleAdminModal(true)">Admin Panel</button>
+            <button id="auth-btn" onclick="toggleAuthModal(true)">Sign In / Register</button>
+            <button id="signout-btn" class="hidden" onclick="handleSignOut()">Sign Out</button>
+        </div>
+    </header>
 
-## Historical Timeline
-* **342 1A**: Forged in the Astral Crucible.
-* **890 1A**: Fractured into three distinct shards during the *Shattering War*.
-* **104 3A**: Shard of Mind recovered by the High Warden.
+    <!-- Unapproved Warning Banner -->
+    <div id="pending-banner" class="banner hidden">
+        <span>⚠️ <strong>Account Pending Admin Approval:</strong> You are in Read-Only mode. Ask an Admin user to
+            greenlight your email.</span>
+    </div>
 
-> [!GM] Secret GM Lore
-> The third shard (Shard of Soul) is hidden in Archmage Vaelin's secret sanctum beneath the flooded archive in Nevareth. It requires a casting of *True Seeing* to reveal the door mechanism.
+    <!-- Workspace Container -->
+    <div class="workspace">
 
-## Known Properties
-- **Attunement**: Requires a spellcaster of non-evil alignment.
-- **Power**: Grants advantage on Saving Throws against magical effects and allows casting *Dispel Magic* at 5th level once per long rest.
+        <!-- Left Sidebar -->
+        <sidebar>
+            <div class="sidebar-header">
+                <span class="sidebar-title">Pages</span>
+                <button id="new-page-btn" onclick="createNewPage()">+ New Page</button>
+            </div>
+            <ul id="pages-list" class="page-list"></ul>
+        </sidebar>
 
-Related entries: Archmage Vaelin, Session 14: The Breach at Nevareth.`,
-        pinned: true
-      },
-      {
-        id: "note-2",
-        title: "Session 14: The Breach at Nevareth",
-        category: "Sessions",
-        tags: ["Session14", "Nevareth", "Combat"],
-        author: "Alex (Valen)",
-        updatedAt: "2026-10-28 21:45",
-        content: `# Session 14: The Breach at Nevareth
+        <!-- Main Note Editor -->
+        <main id="main-editor">
+            <div class="editor-top">
+                <div class="editor-meta">
+                    <span id="editor-status">Ready</span>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span id="editor-author">Author: -</span>
+                        <button id="delete-page-btn" onclick="deleteCurrentPage()"
+                            style="padding: 2px 6px; font-size: 11px;">Delete Page</button>
+                    </div>
+                </div>
+                <input type="text" id="page-title" class="title-input" placeholder="Page Title..."
+                    oninput="handleEditorInput()" />
+            </div>
 
-**Date**: Oct 28th, 2026
-**Party Location**: Nevareth Ruins, Lower Catacombs
+            <div class="editor-body">
+                <textarea id="page-content" class="content-textarea" placeholder="Start typing notes..."
+                    oninput="handleEditorInput()"></textarea>
+            </div>
+        </main>
 
-## Summary
-The party breached the outer obsidian gate using the glyph key found in the sunken library. Valen disarmed the acid dart ward, but triggered a secondary alarms spell.
+        <!-- Empty Workspace Fallback State -->
+        <div id="empty-workspace" class="empty-state hidden">
+            No pages in campaign. Click "+ New Page" on the left to create your first document.
+        </div>
+    </div>
 
-### Encounters
-- **3x Void Stalkers**: Defeated in 3 rounds.
-- **1x Cult Fanatic**: Escaped through the portal.
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title" id="auth-modal-title">Sign In</span>
+                <button onclick="toggleAuthModal(false)">✕</button>
+            </div>
 
-> [!DANGER] Trap Warning
-> The threshold of the inner sanctum is rigged with a Glyph of Warding (DC 17 Intelligence / Investigation check). Triggers a 5d10 Lightning Burst!
+            <form onsubmit="handleAuthSubmit(event)">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="auth-email" required placeholder="player@eschaton.io" />
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="auth-password" required placeholder="••••••••" />
+                </div>
 
-> [!LOOT] Loot Found
-> - 420 Gold Pieces
-> - Scroll of Greater Restoration
-> - Potion of Heroism
-> - Singing Blades of Valenor (Assigned to Valen)`,
-        pinned: false
-      },
-      {
-        id: "note-3",
-        title: "Archmage Vaelin",
-        category: "NPCs",
-        tags: ["NPC", "HighCouncil", "Mage"],
-        author: "Game Master",
-        updatedAt: "2026-10-25 18:10",
-        content: `# Archmage Vaelin
+                <div id="auth-error" style="color: #dc2626; font-size: 11px; margin-bottom: 8px;" class="hidden"></div>
 
-**Role**: Grand Arbiter of the High Council  
-**Alignment**: Lawful Neutral  
-**Location**: The Star Spire, Nevareth  
+                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                    <button type="submit" id="auth-submit-btn"
+                        style="flex: 1; background-color: #111; color: #fff;">Sign In</button>
+                    <button type="button" onclick="toggleAuthMode()" id="auth-toggle-btn">Switch to Register</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-## Personality & Traits
-Vaelin speaks in quiet, deliberate sentences. He wears midnight violet silk robes woven with subtle glowing runes. He seeks to reunite the **Shattered Crown of Eschaton** at any cost to save the plane from collapse.
+    <!-- Admin Gatekeeper Modal -->
+    <div id="admin-modal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 560px;">
+            <div class="modal-header">
+                <span class="modal-title">GM Admin Gatekeeper — User Greenlights</span>
+                <button onclick="toggleAdminModal(false)">✕</button>
+            </div>
 
-> [!LORE] Faction Standing
-> The High Council currently views the party as allies of convenience, but Vaelin will betray the party if they refuse to hand over the Crown Shards.`,
-        pinned: false
-      },
-      {
-        id: "note-4",
-        title: "The Singing Blades of Valenor",
-        category: "Items",
-        tags: ["Item", "Loot", "Valenor"],
-        author: "Alex (Valen)",
-        updatedAt: "2026-10-20 11:05",
-        content: `# The Singing Blades of Valenor
+            <p style="font-size: 12px; color: #666; margin-bottom: 12px;">
+                Registered accounts require an <strong>Approved</strong> greenlight status to edit or create pages.
+            </p>
 
-**Item Type**: Rare Dual Shortswords (Requires Attunement)  
-**Damage**: 1d6 Piercing + 1d4 Thunder  
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-user-rows"></tbody>
+            </table>
+        </div>
+    </div>
 
-When wielded together in battle, the blades hum in harmonious dissonance, casting a faint blue luminescence in dark areas.
+    <!-- Toast Notice -->
+    <div id="toast" class="toast hidden"></div>
 
-> [!LOOT] Special Ability
-> Once per turn when landing a critical strike, the target must succeed on a DC 14 Strength save or be pushed back 10 feet and knocked prone by a sonic boom.`,
-        pinned: false
-      }
-    ];
-
-    // Seed Registered Users
-    const INITIAL_USERS = [
-      { uid: "usr-admin-1", email: "gm@eschaton.io", name: "Game Master", role: "Admin", approved: true },
-      { uid: "usr-player-1", email: "alex@eschaton.io", name: "Alex (Valen)", role: "Player", approved: true },
-      { uid: "usr-player-2", email: "sarah@eschaton.io", name: "Sarah (Lyra)", role: "Player", approved: false },
-      { uid: "usr-player-3", email: "dave@eschaton.io", name: "Dave (Kael)", role: "Player", approved: false }
-    ];
-
-    const CATEGORIES = [
-      { name: "All", icon: "fa-folder" },
-      { name: "Lore", icon: "fa-book-bookmark" },
-      { name: "Sessions", icon: "fa-scroll" },
-      { name: "NPCs", icon: "fa-user-ninja" },
-      { name: "Locations", icon: "fa-dungeon" },
-      { name: "Items", icon: "fa-gem" },
-      { name: "Quests", icon: "fa-shield-halved" }
-    ];
-
-    function App() {
-      // User Auth & Approval State
-      const [currentUser, setCurrentUser] = useState(INITIAL_USERS[0]); // Default to GM Admin for seamless immediate testing
-      const [usersList, setUsersList] = useState(INITIAL_USERS);
-      const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-      const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
-
-      // Notes State
-      const [notes, setNotes] = useState(INITIAL_NOTES);
-      const [activeNoteId, setActiveNoteId] = useState(INITIAL_NOTES[0].id);
-      const [selectedCategory, setSelectedCategory] = useState("All");
-      const [searchQuery, setSearchQuery] = useState("");
-      
-      // Editor Local State
-      const [editorTitle, setEditorTitle] = useState(INITIAL_NOTES[0].title);
-      const [editorContent, setEditorContent] = useState(INITIAL_NOTES[0].content);
-      const [editorCategory, setEditorCategory] = useState(INITIAL_NOTES[0].category);
-      const [editorTagInput, setEditorTagInput] = useState("");
-      const [editorTags, setEditorTags] = useState(INITIAL_NOTES[0].tags);
-      
-      // Realtime Simulation & UI State
-      const [isAutoSaving, setIsAutoSaving] = useState(false);
-      const [lastSavedTime, setLastSavedTime] = useState("Just now");
-      const [toastMessage, setToastMessage] = useState(null);
-      const [diceRollResult, setDiceRollResult] = useState(null);
-      const [firebaseStatus, setFirebaseStatus] = useState("Local Session Active");
-
-      // Active collaborators simulation
-      const activeCollaborators = useMemo(() => {
-        return usersList.filter(u => u.approved && u.uid !== currentUser?.uid).slice(0, 3);
-      }, [usersList, currentUser]);
-
-      const activeNote = useMemo(() => {
-        return notes.find(n => n.id === activeNoteId) || notes[0];
-      }, [notes, activeNoteId]);
-
-      // Handle active note change
-      useEffect(() => {
-        if (activeNote) {
-          setEditorTitle(activeNote.title);
-          setEditorContent(activeNote.content);
-          setEditorCategory(activeNote.category || "Lore");
-          setEditorTags(activeNote.tags || []);
-        }
-      }, [activeNoteId]);
-
-      // Firebase listener & Initialization
-      useEffect(() => {
-        const fb = window.FirebaseServices;
-        if (fb && fb.isAvailable && fb.auth) {
-          setFirebaseStatus("🔥 Firebase Live Connected");
-          const unsubscribe = fb.onAuthStateChanged(fb.auth, (user) => {
-            if (user) {
-              // Fetch user details or sync with store
-              const found = usersList.find(u => u.email === user.email);
-              if (found) {
-                setCurrentUser(found);
-              } else {
-                const newUser = {
-                  uid: user.uid,
-                  email: user.email,
-                  name: user.email.split('@')[0],
-                  role: "Player",
-                  approved: false
-                };
-                setUsersList(prev => [...prev, newUser]);
-                setCurrentUser(newUser);
-              }
-            }
-          });
-          return () => unsubscribe();
-        } else {
-          setFirebaseStatus("💾 Local Multi-User Session");
-        }
-      }, []);
-
-      // Auto-save debounced sync
-      useEffect(() => {
-        if (!currentUser?.approved) return; // Locked if not approved
-
-        const timer = setTimeout(() => {
-          if (activeNote) {
-            setIsAutoSaving(true);
-            const updatedNotes = notes.map(n => {
-              if (n.id === activeNoteId) {
-                return {
-                  ...n,
-                  title: editorTitle,
-                  content: editorContent,
-                  category: editorCategory,
-                  tags: editorTags,
-                  updatedAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-                };
-              }
-              return n;
-            });
-            setNotes(updatedNotes);
-            setTimeout(() => {
-              setIsAutoSaving(false);
-              setLastSavedTime("Just now");
-            }, 300);
-          }
-        }, 800);
-
-        return () => clearTimeout(timer);
-      }, [editorTitle, editorContent, editorCategory, editorTags]);
-
-      // Toast notification helper
-      const showToast = (msg, type = "success") => {
-        setToastMessage({ text: msg, type });
-        setTimeout(() => setToastMessage(null), 3500);
-      };
-
-      // Filtered notes list
-      const filteredNotes = useMemo(() => {
-        return notes.filter(n => {
-          const matchesCategory = selectedCategory === "All" || n.category === selectedCategory;
-          const matchesSearch = searchQuery === "" || 
-            n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            n.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            n.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
-          return matchesCategory && matchesSearch;
-        });
-      }, [notes, selectedCategory, searchQuery]);
-
-      // Backlinks feature: Finds other notes referencing the title of active note
-      const backlinks = useMemo(() => {
-        if (!activeNote) return [];
-        return notes.filter(n => 
-          n.id !== activeNote.id && 
-          n.content.toLowerCase().includes(activeNote.title.toLowerCase())
-        );
-      }, [notes, activeNote]);
-
-      // Handle Quick Note Creation
-      const handleCreateNewNote = () => {
-        if (!currentUser?.approved) {
-          showToast("🔒 Cannot create notes: Your account is pending admin greenlight approval.", "error");
-          return;
-        }
-
-        const newId = `note-${Date.now()}`;
-        const newNote = {
-          id: newId,
-          title: "Untitled Campaign Note",
-          category: selectedCategory === "All" ? "Lore" : selectedCategory,
-          tags: ["New"],
-          author: currentUser.name || currentUser.email,
-          updatedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
-          content: `# Untitled Campaign Note\n\nStart typing your campaign lore, GM secrets, or encounter notes here...\n\n> [!GM] GM Secret Note\n> Add hidden information here!`,
-          pinned: false
+    <!-- App Script -->
+    <script>
+        // Exact User Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBeYN6lMzYt_yIMuJVfB_j7eYAD0DRjK9s",
+            authDomain: "eschaton-wiki.firebaseapp.com",
+            projectId: "eschaton-wiki",
+            storageBucket: "eschaton-wiki.firebasestorage.app",
+            messagingSenderId: "614710548622",
+            appId: "1:614710548622:web:b2f8d13f3866cda6fe11df"
         };
 
-        setNotes([newNote, ...notes]);
-        setActiveNoteId(newId);
-        showToast("New campaign note created!");
-      };
+        // Initialize Firebase Services
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-      // Delete note
-      const handleDeleteNote = (id) => {
-        if (!currentUser?.approved) {
-          showToast("🔒 Cannot delete notes: Account pending admin approval.", "error");
-          return;
+        // State Management
+        let firebaseUser = null;
+        let userProfile = null;
+        let pagesList = [];
+        let activePageId = null;
+        let isRegisterMode = false;
+        let saveTimeout = null;
+
+        // DOM References
+        const elUserDisplay = document.getElementById("user-display");
+        const elApprovalBadge = document.getElementById("approval-badge");
+        const elPendingBanner = document.getElementById("pending-banner");
+        const elAdminBtn = document.getElementById("admin-btn");
+        const elAuthBtn = document.getElementById("auth-btn");
+        const elSignoutBtn = document.getElementById("signout-btn");
+
+        const elPagesList = document.getElementById("pages-list");
+        const elNewPageBtn = document.getElementById("new-page-btn");
+        const elDeletePageBtn = document.getElementById("delete-page-btn");
+
+        const elMainEditor = document.getElementById("main-editor");
+        const elEmptyWorkspace = document.getElementById("empty-workspace");
+        const elPageTitle = document.getElementById("page-title");
+        const elPageContent = document.getElementById("page-content");
+        const elEditorStatus = document.getElementById("editor-status");
+        const elEditorAuthor = document.getElementById("editor-author");
+
+        const elAuthModal = document.getElementById("auth-modal");
+        const elAuthModalTitle = document.getElementById("auth-modal-title");
+        const elAuthSubmitBtn = document.getElementById("auth-submit-btn");
+        const elAuthToggleBtn = document.getElementById("auth-toggle-btn");
+        const elAuthEmail = document.getElementById("auth-email");
+        const elAuthPassword = document.getElementById("auth-password");
+        const elAuthError = document.getElementById("auth-error");
+
+        const elAdminModal = document.getElementById("admin-modal");
+        const elAdminUserRows = document.getElementById("admin-user-rows");
+        const elToast = document.getElementById("toast");
+
+        // Initialize Realtime Listeners
+        window.addEventListener("DOMContentLoaded", () => {
+            initAuthListener();
+            initPagesRealtimeListener();
+            initUsersRealtimeListener();
+        });
+
+        // 1. Realtime Auth State
+        function initAuthListener() {
+            auth.onAuthStateChanged(user => {
+                firebaseUser = user;
+                if (user) {
+                    // Sync user profile from Firestore 'users' collection
+                    db.collection("users").doc(user.uid).onSnapshot(doc => {
+                        if (doc.exists) {
+                            userProfile = { uid: user.uid, ...doc.data() };
+                        } else {
+                            userProfile = { uid: user.uid, email: user.email, approved: false, isAdmin: false };
+                        }
+                        renderUI();
+                    });
+                } else {
+                    userProfile = null;
+                    renderUI();
+                }
+            });
         }
-        if (notes.length <= 1) {
-          showToast("Cannot delete the last remaining note.", "error");
-          return;
+
+        // 2. Realtime Pages Subscription ('pages' collection)
+        function initPagesRealtimeListener() {
+            db.collection("pages").onSnapshot(snapshot => {
+                pagesList = [];
+                snapshot.forEach(doc => {
+                    pagesList.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Set initial active page if none selected
+                if (pagesList.length > 0 && !activePageId) {
+                    activePageId = pagesList[0].id;
+                } else if (pagesList.length === 0) {
+                    activePageId = null;
+                }
+
+                renderPagesList();
+                renderActivePage();
+            }, err => {
+                console.error("Firestore Pages error:", err);
+            });
         }
-        const filtered = notes.filter(n => n.id !== id);
-        setNotes(filtered);
-        setActiveNoteId(filtered[0].id);
-        showToast("Note removed from wiki");
-      };
 
-      // Handle Tag Add/Remove
-      const handleAddTag = (e) => {
-        if (e.key === 'Enter' && editorTagInput.trim()) {
-          e.preventDefault();
-          const cleanTag = editorTagInput.trim().replace(/^#/, '');
-          if (!editorTags.includes(cleanTag)) {
-            setEditorTags([...editorTags, cleanTag]);
-          }
-          setEditorTagInput('');
+        // 3. Realtime Users Subscription ('users' collection for Admin Panel)
+        function initUsersRealtimeListener() {
+            db.collection("users").onSnapshot(snapshot => {
+                const users = [];
+                snapshot.forEach(doc => {
+                    users.push({ uid: doc.id, ...doc.data() });
+                });
+                renderAdminTable(users);
+            }, err => {
+                console.error("Firestore Users error:", err);
+            });
         }
-      };
 
-      const handleRemoveTag = (tagToRemove) => {
-        setEditorTags(editorTags.filter(t => t !== tagToRemove));
-      };
+        // Render Interface
+        function renderUI() {
+            // User Profile Controls
+            if (firebaseUser) {
+                elUserDisplay.innerText = firebaseUser.email;
+                elAuthBtn.classList.add("hidden");
+                elSignoutBtn.classList.remove("hidden");
 
-      // Formatting Toolbar actions
-      const insertFormatting = (prefix, suffix = '') => {
-        if (!currentUser?.approved) return;
-        const textarea = document.getElementById("main-editor-textarea");
-        if (!textarea) return;
+                const isApproved = userProfile && userProfile.approved;
+                const isAdmin = userProfile && userProfile.isAdmin;
 
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = textarea.value;
-        const selected = text.substring(start, end);
-        const replacement = prefix + (selected || "text") + suffix;
+                if (isApproved) {
+                    elApprovalBadge.innerText = isAdmin ? "Admin / Approved" : "Approved";
+                    elApprovalBadge.className = "status-badge status-approved";
+                    elApprovalBadge.classList.remove("hidden");
+                    elPendingBanner.classList.add("hidden");
+                } else {
+                    elApprovalBadge.innerText = "Pending Admin Greenlight";
+                    elApprovalBadge.className = "status-badge status-pending";
+                    elApprovalBadge.classList.remove("hidden");
+                    elPendingBanner.classList.remove("hidden");
+                }
 
-        const newContent = text.substring(0, start) + replacement + text.substring(end);
-        setEditorContent(newContent);
-      };
-
-      // TTRPG Callout insertions
-      const insertCallout = (type) => {
-        let calloutBlock = "";
-        if (type === "GM") calloutBlock = "\n\n> [!GM] Secret GM Note\n> Only visible during prep or to authorized GMs.\n\n";
-        if (type === "DANGER") calloutBlock = "\n\n> [!DANGER] Trap / Encounter Trigger\n> DC 15 Perception check required to detect.\n\n";
-        if (type === "LOOT") calloutBlock = "\n\n> [!LOOT] Treasure & Rewards\n> 250 GP, Ruby Gemstone, Spell Scroll.\n\n";
-        if (type === "LORE") calloutBlock = "\n\n> [!LORE] Ancient Legend\n> Passed down through centuries of oral tradition.\n\n";
-
-        setEditorContent(prev => prev + calloutBlock);
-      };
-
-      // Dice Roller
-      const rollDice = (sides) => {
-        const result = Math.floor(Math.random() * sides) + 1;
-        setDiceRollResult({ sides, val: result, isCrit: sides === 20 && result === 20, isFumble: sides === 20 && result === 1 });
-      };
-
-      const insertDiceRollToNote = () => {
-        if (diceRollResult && currentUser?.approved) {
-          const rollText = ` **[d${diceRollResult.sides} Roll: ${diceRollResult.val}]** `;
-          insertFormatting(rollText);
-          showToast(`Inserted d${diceRollResult.sides} result into note!`);
-        }
-      };
-
-      // Admin Toggle / Greenlight User
-      const handleToggleUserApproval = (uid) => {
-        setUsersList(prev => prev.map(u => {
-          if (u.uid === uid) {
-            const updated = { ...u, approved: !u.approved };
-            if (currentUser && currentUser.uid === uid) {
-              setCurrentUser(updated);
+                if (isAdmin) {
+                    elAdminBtn.classList.remove("hidden");
+                } else {
+                    elAdminBtn.classList.add("hidden");
+                }
+            } else {
+                elUserDisplay.innerText = "Not Signed In";
+                elApprovalBadge.classList.add("hidden");
+                elPendingBanner.classList.add("hidden");
+                elAdminBtn.classList.add("hidden");
+                elAuthBtn.classList.remove("hidden");
+                elSignoutBtn.classList.add("hidden");
             }
-            return updated;
-          }
-          return u;
-        }));
-        showToast("User authorization status updated!");
-      };
 
-      // Quick Switch Active Account (For live testing demo)
-      const handleSwitchUserAccount = (user) => {
-        setCurrentUser(user);
-        showToast(`Switched user view to: ${user.name} (${user.role})`);
-      };
-
-      return (
-        <div className="flex flex-col h-screen bg-darkbg text-slate-100 font-sans">
-          
-          <!-- Top Header Navigation -->
-          <header className="h-14 bg-darksurface border-b border-darkborder flex items-center justify-between px-4 z-20 select-none">
-            <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-eschaton-600 to-indigo-700 flex items-center justify-center text-white shadow-lg shadow-eschaton-900/40">
-                <i className="fa-solid font-black fa-dice-d20 text-xl animate-pulse"></i>
-              </div>
-              <div>
-                <h1 className="font-bold text-base tracking-wide flex items-center space-x-2">
-                  <span>ESCHATON WIKI</span>
-                  <span className="text-[10px] bg-eschaton-900/80 text-eschaton-100 border border-eschaton-600/40 px-2 py-0.5 rounded-full uppercase font-mono tracking-wider">TTRPG Campaign</span>
-                </h1>
-                <p className="text-[11px] text-slate-400 font-mono flex items-center space-x-2">
-                  <span>{firebaseStatus}</span>
-                </p>
-              </div>
-            </div>
-
-            <!-- Presence & Active Collaborators -->
-            <div className="hidden md:flex items-center space-x-4">
-              <div className="flex items-center space-x-2 bg-darkcard/80 px-3 py-1.5 rounded-full border border-darkborder text-xs">
-                <span className="text-slate-400 font-mono">Live in Doc:</span>
-                <div className="flex -space-x-1.5 overflow-hidden">
-                  <div className="inline-block h-6 w-6 rounded-full bg-purple-600 ring-2 ring-darksurface flex items-center justify-center font-bold text-[10px]" title={`${currentUser?.name} (You)`}>
-                    {currentUser?.name?.charAt(0) || 'U'}
-                  </div>
-                  {activeCollaborators.map(c => (
-                    <div key={c.uid} className="inline-block h-6 w-6 rounded-full bg-emerald-600 ring-2 ring-darksurface flex items-center justify-center font-bold text-[10px]" title={`${c.name} (${c.email})`}>
-                      {c.name.charAt(0)}
-                    </div>
-                  ))}
-                </div>
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-              </div>
-
-              <!-- Admin Quick Button -->
-              {currentUser?.role === "Admin" && (
-                <button 
-                  onClick={() => setIsAdminPanelOpen(true)}
-                  className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition"
-                >
-                  <i className="fa-solid fa-user-shield"></i>
-                  <span>GM Admin Gatekeeper</span>
-                  {usersList.some(u => !u.approved) && (
-                    <span className="bg-amber-500 text-slate-900 font-bold px-1.5 py-0.2 text-[10px] rounded-full animate-bounce">
-                      {usersList.filter(u => !u.approved).length}
-                    </span>
-                  )}
-                </button>
-              )}
-
-              <!-- Account Profile & Sign In / Out -->
-              <div className="flex items-center space-x-2 border-l border-darkborder pl-4">
-                <div className="text-right">
-                  <div className="text-xs font-semibold flex items-center space-x-1 justify-end">
-                    <span>{currentUser?.name || "Guest"}</span>
-                    {currentUser?.approved ? (
-                      <span className="text-emerald-400 text-[10px]" title="Greenlit & Approved Editor">
-                        <i className="fa-solid fa-circle-check"></i>
-                      </span>
-                    ) : (
-                      <span className="text-amber-400 text-[10px]" title="Pending Admin Approval">
-                        <i className="fa-solid fa-clock"></i>
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[10px] text-slate-400 font-mono">
-                    {currentUser?.approved ? (currentUser?.role === "Admin" ? "GM / Admin" : "Approved Player") : "Pending Approval"}
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setIsAuthModalOpen(true)}
-                  className="bg-darkcard hover:bg-slate-800 text-slate-300 border border-darkborder p-2 rounded-lg text-xs transition"
-                  title="Switch / Sign In User"
-                >
-                  <i className="fa-solid fa-right-to-bracket"></i>
-                </button>
-              </div>
-            </div>
-          </header>
-
-          <!-- Top Permission Warning Banner (If Unapproved) -->
-          {!currentUser?.approved && (
-            <div className="bg-amber-950/80 border-b border-amber-600/40 px-4 py-2 text-amber-200 text-xs flex items-center justify-between z-10 shadow-inner">
-              <div className="flex items-center space-x-2">
-                <i className="fa-solid fa-triangle-exclamation text-amber-400 text-sm"></i>
-                <span>
-                  <strong>Read-Only Access:</strong> Account <code className="bg-amber-900/60 px-1 py-0.5 rounded font-mono">{currentUser?.email}</code> is awaiting GM / Admin Greenlight approval. Editing and page creation are locked.
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button 
-                  onClick={() => setIsAdminPanelOpen(true)} 
-                  className="bg-amber-500 text-slate-950 font-bold px-2.5 py-1 rounded text-[11px] hover:bg-amber-400 transition"
-                >
-                  Quick Approve via Admin Switch
-                </button>
-              </div>
-            </div>
-          )}
-
-          <!-- Main Workspace Body -->
-          <div className="flex-1 flex overflow-hidden">
-            
-            <!-- LEFT SIDEBAR: Navigation & Note Tree -->
-            <aside className="w-80 bg-darksurface border-r border-darkborder flex flex-col shrink-0 select-none">
-              
-              <!-- Sidebar Controls -->
-              <div className="p-3 border-b border-darkborder space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">Campaign Wiki</span>
-                  <button 
-                    onClick={handleCreateNewNote}
-                    disabled={!currentUser?.approved}
-                    className={`text-xs px-2.5 py-1.5 rounded-md font-medium flex items-center space-x-1.5 transition ${
-                      currentUser?.approved 
-                        ? 'bg-eschaton-600 hover:bg-eschaton-500 text-white shadow-md shadow-eschaton-900/50' 
-                        : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                    }`}
-                  >
-                    <i className="fa-solid fa-plus text-[10px]"></i>
-                    <span>New Page</span>
-                  </button>
-                </div>
-
-                <!-- Search Input -->
-                <div className="relative">
-                  <i className="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
-                  <input 
-                    type="text" 
-                    placeholder="Search notes, tags, lore..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-darkbg border border-darkborder rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-eschaton-500 placeholder-slate-500 transition"
-                  />
-                  {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-2.5 text-slate-500 hover:text-slate-300 text-xs">
-                      <i className="fa-solid fa-xmark"></i>
-                    </button>
-                  )}
-                </div>
-
-                <!-- Category Filters -->
-                <div className="flex items-center space-x-1 overflow-x-auto pb-1 text-[11px]">
-                  {CATEGORIES.map(cat => (
-                    <button
-                      key={cat.name}
-                      onClick={() => setSelectedCategory(cat.name)}
-                      className={`px-2 py-1 rounded-md whitespace-nowrap transition flex items-center space-x-1 ${
-                        selectedCategory === cat.name 
-                          ? 'bg-eschaton-600/30 text-eschaton-300 border border-eschaton-500/40 font-semibold' 
-                          : 'bg-darkbg/50 text-slate-400 border border-transparent hover:bg-darkcard'
-                      }`}
-                    >
-                      <i className={`fa-solid ${cat.icon} text-[10px]`}></i>
-                      <span>{cat.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <!-- Notes List -->
-              <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                {filteredNotes.length === 0 ? (
-                  <div className="p-8 text-center text-slate-500 text-xs">
-                    <i className="fa-solid fa-book-open text-2xl mb-2 opacity-40"></i>
-                    <p>No campaign pages found matching your search filter.</p>
-                  </div>
-                ) : (
-                  filteredNotes.map(note => {
-                    const isActive = note.id === activeNoteId;
-                    return (
-                      <div
-                        key={note.id}
-                        onClick={() => setActiveNoteId(note.id)}
-                        className={`group p-2.5 rounded-lg border transition cursor-pointer flex flex-col space-y-1 ${
-                          isActive 
-                            ? 'bg-darkcard border-eschaton-500/50 text-white shadow-md' 
-                            : 'bg-transparent border-transparent text-slate-400 hover:bg-darkcard/50 hover:text-slate-200'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center space-x-2 truncate">
-                            <i className={`fa-solid ${
-                              note.category === 'NPCs' ? 'fa-user-ninja' :
-                              note.category === 'Sessions' ? 'fa-scroll' :
-                              note.category === 'Items' ? 'fa-gem' :
-                              note.category === 'Locations' ? 'fa-dungeon' : 'fa-book-bookmark'
-                            } text-xs ${isActive ? 'text-eschaton-400' : 'text-slate-500'}`}></i>
-                            <span className="font-semibold text-xs truncate">{note.title}</span>
-                          </div>
-                          {note.pinned && (
-                            <i className="fa-solid fa-thumbtack text-[10px] text-amber-400 shrink-0"></i>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
-                          <span>{note.category}</span>
-                          <span>{note.updatedAt.slice(5, 10)}</span>
-                        </div>
-
-                        <!-- Tag Pills -->
-                        {note.tags && note.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 pt-1">
-                            {note.tags.slice(0, 3).map(tag => (
-                              <span key={tag} className="bg-slate-800 text-slate-400 text-[9px] px-1.5 py-0.2 rounded border border-slate-700 font-mono">
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              <!-- Sidebar Footer User Profile -->
-              <div className="p-3 border-t border-darkborder bg-darkbg/50 flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-xs truncate">
-                  <div className="w-7 h-7 rounded-full bg-eschaton-700 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                    {currentUser?.name?.charAt(0) || 'U'}
-                  </div>
-                  <div className="truncate">
-                    <div className="font-medium text-slate-200 truncate">{currentUser?.name}</div>
-                    <div className="text-[10px] text-slate-500 font-mono truncate">{currentUser?.email}</div>
-                  </div>
-                </div>
-                {currentUser?.role === "Admin" && (
-                  <button 
-                    onClick={() => setIsAdminPanelOpen(true)}
-                    className="text-amber-400 hover:text-amber-300 p-1.5 rounded hover:bg-amber-950/40 text-xs transition"
-                    title="GM Admin Approval Portal"
-                  >
-                    <i className="fa-solid fa-user-gear"></i>
-                  </button>
-                )}
-              </div>
-            </aside>
-
-            <!-- RIGHT CANVAS: Google Docs + Obsidian Style Editor -->
-            <main className="flex-1 flex flex-col bg-darkbg overflow-hidden relative">
-              
-              {activeNote ? (
-                <div className="flex-1 flex flex-col h-full overflow-hidden">
-                  
-                  <!-- Editor Top Metadata Header -->
-                  <div className="p-4 border-b border-darkborder bg-darksurface flex flex-col space-y-3 shrink-0">
-                    <div className="flex items-center justify-between">
-                      
-                      <!-- Category Selector -->
-                      <div className="flex items-center space-x-2">
-                        <select 
-                          value={editorCategory}
-                          disabled={!currentUser?.approved}
-                          onChange={(e) => setEditorCategory(e.target.value)}
-                          className="bg-darkcard border border-darkborder rounded px-2 py-1 text-xs font-mono text-eschaton-400 focus:outline-none focus:border-eschaton-500 disabled:opacity-60"
-                        >
-                          {CATEGORIES.filter(c => c.name !== "All").map(c => (
-                            <option key={c.name} value={c.name}>{c.name}</option>
-                          ))}
-                        </select>
-
-                        <span className="text-slate-600">|</span>
-
-                        <!-- Auto Save Indicator -->
-                        <span className="text-[11px] font-mono text-slate-400 flex items-center space-x-1">
-                          {isAutoSaving ? (
-                            <>
-                              <i className="fa-solid fa-arrows-rotate animate-spin text-eschaton-400"></i>
-                              <span>Syncing changes...</span>
-                            </>
-                          ) : (
-                            <>
-                              <i className="fa-solid fa-cloud-arrow-up text-emerald-400"></i>
-                              <span>Saved ({lastSavedTime})</span>
-                            </>
-                          )}
-                        </span>
-                      </div>
-
-                      <!-- Document Actions -->
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(editorContent);
-                            showToast("Copied page markdown to clipboard!");
-                          }}
-                          className="px-2.5 py-1 bg-darkcard hover:bg-slate-800 text-slate-300 border border-darkborder rounded text-xs transition flex items-center space-x-1"
-                          title="Copy Page Source"
-                        >
-                          <i className="fa-solid fa-copy"></i>
-                          <span className="hidden sm:inline">Copy</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleDeleteNote(activeNote.id)}
-                          disabled={!currentUser?.approved}
-                          className="px-2.5 py-1 bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 border border-rose-800/40 rounded text-xs transition flex items-center space-x-1 disabled:opacity-40"
-                          title="Delete Note"
-                        >
-                          <i className="fa-solid fa-trash-can"></i>
-                          <span className="hidden sm:inline">Delete</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Page Title Input -->
-                    <input 
-                      type="text" 
-                      value={editorTitle}
-                      disabled={!currentUser?.approved}
-                      onChange={(e) => setEditorTitle(e.target.value)}
-                      placeholder="Page Title..."
-                      className="text-2xl font-bold bg-transparent border-b border-transparent focus:border-eschaton-500 focus:outline-none text-slate-100 placeholder-slate-600 transition py-0.5 disabled:opacity-75"
-                    />
-
-                    <!-- Tag Bar & Author Metadata -->
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <i className="fa-solid fa-hashtag text-slate-500 text-xs"></i>
-                        {editorTags.map(tag => (
-                          <span key={tag} className="bg-slate-800 text-eschaton-300 px-2 py-0.5 rounded-full border border-slate-700 text-[11px] font-mono flex items-center space-x-1">
-                            <span>{tag}</span>
-                            {currentUser?.approved && (
-                              <button onClick={() => handleRemoveTag(tag)} className="text-slate-500 hover:text-slate-200">
-                                <i className="fa-solid fa-xmark text-[9px]"></i>
-                              </button>
-                            )}
-                          </span>
-                        ))}
-                        {currentUser?.approved && (
-                          <input
-                            type="text"
-                            placeholder="+ Add tag (Enter)"
-                            value={editorTagInput}
-                            onChange={(e) => setEditorTagInput(e.target.value)}
-                            onKeyDown={handleAddTag}
-                            className="bg-transparent border-none text-[11px] font-mono text-slate-400 placeholder-slate-600 focus:outline-none w-28"
-                          />
-                        )}
-                      </div>
-
-                      <div className="text-[11px] text-slate-500 font-mono">
-                        Author: <span className="text-slate-300">{activeNote.author}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Rich Toolbar (Markdown & GM Callouts) -->
-                  <div className="bg-darkcard border-b border-darkborder px-4 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0 select-none">
-                    
-                    <!-- Basic Formatting -->
-                    <div className="flex items-center space-x-1">
-                      <button onClick={() => insertFormatting('**', '**')} disabled={!currentUser?.approved} className="p-1.5 hover:bg-slate-800 rounded text-slate-300 text-xs disabled:opacity-40" title="Bold">
-                        <i className="fa-solid fa-bold"></i>
-                      </button>
-                      <button onClick={() => insertFormatting('*', '*')} disabled={!currentUser?.approved} className="p-1.5 hover:bg-slate-800 rounded text-slate-300 text-xs disabled:opacity-40" title="Italic">
-                        <i className="fa-solid fa-italic"></i>
-                      </button>
-                      <button onClick={() => insertFormatting('# ')} disabled={!currentUser?.approved} className="p-1.5 hover:bg-slate-800 rounded text-slate-300 text-xs disabled:opacity-40 font-mono font-bold" title="Heading 1">
-                        H1
-                      </button>
-                      <button onClick={() => insertFormatting('## ')} disabled={!currentUser?.approved} className="p-1.5 hover:bg-slate-800 rounded text-slate-300 text-xs disabled:opacity-40 font-mono font-bold" title="Heading 2">
-                        H2
-                      </button>
-                      <button onClick={() => insertFormatting('- ')} disabled={!currentUser?.approved} className="p-1.5 hover:bg-slate-800 rounded text-slate-300 text-xs disabled:opacity-40" title="Bullet List">
-                        <i className="fa-solid fa-list-ul"></i>
-                      </button>
-                      <button onClick={() => insertFormatting('`', '`')} disabled={!currentUser?.approved} className="p-1.5 hover:bg-slate-800 rounded text-slate-300 text-xs disabled:opacity-40" title="Inline Code">
-                        <i className="fa-solid fa-code"></i>
-                      </button>
-                    </div>
-
-                    <!-- TTRPG GM Callouts -->
-                    <div className="flex items-center space-x-1.5 border-l border-darkborder pl-3">
-                      <span className="text-[10px] text-slate-500 font-mono font-semibold uppercase">Callouts:</span>
-                      <button onClick={() => insertCallout('GM')} disabled={!currentUser?.approved} className="px-2 py-0.5 bg-purple-950/60 hover:bg-purple-900/80 text-purple-300 border border-purple-700/50 rounded text-[11px] font-mono transition disabled:opacity-40" title="Secret GM Note">
-                        💜 GM Note
-                      </button>
-                      <button onClick={() => insertCallout('DANGER')} disabled={!currentUser?.approved} className="px-2 py-0.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-700/50 rounded text-[11px] font-mono transition disabled:opacity-40" title="Danger / Trap Warning">
-                        🔴 Trap/Danger
-                      </button>
-                      <button onClick={() => insertCallout('LOOT')} disabled={!currentUser?.approved} className="px-2 py-0.5 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/50 rounded text-[11px] font-mono transition disabled:opacity-40" title="Loot / Treasure">
-                        🟢 Loot
-                      </button>
-                    </div>
-
-                    <!-- Dice Roller Fast Trigger -->
-                    <div className="flex items-center space-x-1 border-l border-darkborder pl-3">
-                      <span className="text-[10px] text-slate-500 font-mono font-semibold uppercase">Roll:</span>
-                      {[4, 6, 8, 10, 12, 20].map(s => (
-                        <button 
-                          key={s} 
-                          onClick={() => rollDice(s)} 
-                          className="px-1.5 py-0.5 bg-slate-800 hover:bg-eschaton-600 hover:text-white text-slate-300 border border-slate-700 rounded text-[10px] font-mono transition"
-                        >
-                          d{s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <!-- Live Dice Roller Result Toast Bar -->
-                  {diceRollResult && (
-                    <div className="bg-darkcard border-b border-darkborder px-4 py-2 flex items-center justify-between text-xs animate-fade-in">
-                      <div className="flex items-center space-x-3">
-                        <span className="font-mono text-slate-400">Rolled <strong>d{diceRollResult.sides}</strong>:</span>
-                        <span className={`text-base font-extrabold font-mono px-3 py-0.5 rounded ${
-                          diceRollResult.isCrit ? 'bg-amber-500 text-slate-950 animate-bounce' :
-                          diceRollResult.isFumble ? 'bg-rose-600 text-white' : 'bg-eschaton-700 text-white'
-                        }`}>
-                          {diceRollResult.val}
-                          {diceRollResult.isCrit && " (CRITICAL SUCCESS!)"}
-                          {diceRollResult.isFumble && " (NAT 1 FUMBLE!)"}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {currentUser?.approved && (
-                          <button 
-                            onClick={insertDiceRollToNote}
-                            className="bg-eschaton-600 hover:bg-eschaton-500 text-white px-2 py-1 rounded text-[11px] transition"
-                          >
-                            Insert into Doc
-                          </button>
-                        )}
-                        <button onClick={() => setDiceRollResult(null)} className="text-slate-500 hover:text-slate-300">
-                          <i className="fa-solid fa-xmark"></i>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <!-- Textarea / Editor Viewport -->
-                  <div className="flex-1 p-6 overflow-y-auto bg-darkbg">
-                    <textarea
-                      id="main-editor-textarea"
-                      value={editorContent}
-                      disabled={!currentUser?.approved}
-                      onChange={(e) => setEditorContent(e.target.value)}
-                      placeholder="Write campaign notes here... Markdown syntax supported."
-                      className="w-full h-full min-h-[400px] bg-transparent text-slate-200 font-mono text-sm leading-relaxed focus:outline-none resize-none editor-textarea disabled:text-slate-400 disabled:cursor-not-allowed"
-                    ></textarea>
-                  </div>
-
-                  <!-- Obsidian Backlinks Footer Section -->
-                  <div className="border-t border-darkborder bg-darksurface p-4 shrink-0">
-                    <div className="flex items-center justify-between text-xs font-mono text-slate-400 mb-2">
-                      <span className="flex items-center space-x-1">
-                        <i className="fa-solid fa-link text-eschaton-400"></i>
-                        <span className="font-bold">Linked Backlinks ({backlinks.length})</span>
-                      </span>
-                      <span className="text-[10px] text-slate-500">Other wiki pages referencing "{activeNote.title}"</span>
-                    </div>
-
-                    {backlinks.length === 0 ? (
-                      <p className="text-[11px] text-slate-600 italic font-mono">No other campaign pages reference this title yet.</p>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {backlinks.map(bl => (
-                          <button
-                            key={bl.id}
-                            onClick={() => setActiveNoteId(bl.id)}
-                            className="bg-darkcard hover:bg-slate-800 text-eschaton-300 border border-darkborder px-2.5 py-1 rounded text-xs font-mono transition flex items-center space-x-1"
-                          >
-                            <i className="fa-solid fa-arrow-turn-up text-[10px] text-slate-500"></i>
-                            <span>{bl.title}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-slate-500 p-8">
-                  <i className="fa-solid fa-dungeon text-4xl mb-3 text-slate-700"></i>
-                  <p>Select a note from the left sidebar or create a new page.</p>
-                </div>
-              )}
-
-            </main>
-          </div>
-
-          <!-- Toast Notification Banner -->
-          {toastMessage && (
-            <div className={`fixed bottom-5 right-5 px-4 py-2.5 rounded-lg shadow-2xl text-xs font-medium flex items-center space-x-2 z-50 border animate-bounce ${
-              toastMessage.type === 'error' 
-                ? 'bg-rose-900/90 text-rose-100 border-rose-700' 
-                : 'bg-eschaton-900/90 text-eschaton-100 border-eschaton-600'
-            }`}>
-              <i className={`fa-solid ${toastMessage.type === 'error' ? 'fa-circle-exclamation text-rose-400' : 'fa-circle-check text-emerald-400'}`}></i>
-              <span>{toastMessage.text}</span>
-            </div>
-          )}
-
-          <!-- AUTH / LOGIN MODAL -->
-          {isAuthModalOpen && (
-            <AuthModal 
-              onClose={() => setIsAuthModalOpen(false)}
-              usersList={usersList}
-              onLoginUser={handleSwitchUserAccount}
-              onRegisterNewUser={(email, name) => {
-                const newUser = {
-                  uid: `usr-${Date.now()}`,
-                  email,
-                  name: name || email.split('@')[0],
-                  role: "Player",
-                  approved: false // Default unapproved until GM greenlight!
-                };
-                setUsersList(prev => [...prev, newUser]);
-                setCurrentUser(newUser);
-                setIsAuthModalOpen(false);
-                showToast("Account registered! Status: Pending Admin Greenlight Approval.");
-              }}
-            />
-          )}
-
-          <!-- GM ADMIN APPROVAL GATEKEEPER MODAL -->
-          {isAdminPanelOpen && (
-            <AdminPortalModal 
-              onClose={() => setIsAdminPanelOpen(false)}
-              usersList={usersList}
-              currentUser={currentUser}
-              onToggleApproval={handleToggleUserApproval}
-              onApproveAll={() => {
-                setUsersList(prev => prev.map(u => ({ ...u, approved: true })));
-                if (currentUser) setCurrentUser(prev => ({ ...prev, approved: true }));
-                showToast("All registered user accounts greenlighted!");
-              }}
-            />
-          )}
-
-        </div>
-      );
-    }
-
-    <!-- AUTH MODAL COMPONENT -->
-    function AuthModal({ onClose, usersList, onLoginUser, onRegisterNewUser }) {
-      const [isRegistering, setIsRegistering] = useState(false);
-      const [emailInput, setEmailInput] = useState("");
-      const [passwordInput, setPasswordInput] = useState("");
-      const [nameInput, setNameInput] = useState("");
-
-      const handleSubmit = (e) => {
-        e.preventDefault();
-        if (!emailInput) return;
-
-        if (isRegistering) {
-          onRegisterNewUser(emailInput, nameInput);
-        } else {
-          const match = usersList.find(u => u.email.toLowerCase() === emailInput.toLowerCase());
-          if (match) {
-            onLoginUser(match);
-            onClose();
-          } else {
-            // Auto register if missing
-            onRegisterNewUser(emailInput, nameInput);
-          }
+            renderPagesList();
+            renderActivePage();
         }
-      };
 
-      return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-darksurface border border-darkborder w-full max-w-md rounded-xl p-6 shadow-2xl relative">
-            <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white">
-              <i className="fa-solid fa-xmark"></i>
+        function renderPagesList() {
+            elPagesList.innerHTML = "";
+            pagesList.forEach(p => {
+                const li = document.createElement("li");
+                li.className = `page-item ${p.id === activePageId ? 'active' : ''}`;
+                li.innerText = p.title || "Untitled Page";
+                li.onclick = () => {
+                    activePageId = p.id;
+                    renderPagesList();
+                    renderActivePage();
+                };
+                elPagesList.appendChild(li);
+            });
+
+            const canEdit = userProfile && userProfile.approved;
+            elNewPageBtn.disabled = !canEdit;
+            elDeletePageBtn.disabled = !canEdit;
+        }
+
+        function renderActivePage() {
+            if (pagesList.length === 0 || !activePageId) {
+                elMainEditor.classList.add("hidden");
+                elEmptyWorkspace.classList.remove("hidden");
+                return;
+            }
+
+            elMainEditor.classList.remove("hidden");
+            elEmptyWorkspace.classList.add("hidden");
+
+            const page = pagesList.find(p => p.id === activePageId);
+            if (!page) return;
+
+            // Only update values if element is not currently focused by user
+            if (document.activeElement !== elPageTitle) {
+                elPageTitle.value = page.title || "";
+            }
+            if (document.activeElement !== elPageContent) {
+                elPageContent.value = page.content || "";
+            }
+
+            elEditorAuthor.innerText = `Author: ${page.updatedBy || 'Unknown'}`;
+
+            const canEdit = userProfile && userProfile.approved;
+            elPageTitle.disabled = !canEdit;
+            elPageContent.disabled = !canEdit;
+
+            if (!canEdit) {
+                elEditorStatus.innerText = "Read-Only (Pending Admin Approval)";
+            } else {
+                elEditorStatus.innerText = "Saved";
+            }
+        }
+
+        // Auto-Save Handler to Firestore
+        function handleEditorInput() {
+            const canEdit = userProfile && userProfile.approved;
+            if (!canEdit || !activePageId) return;
+
+            elEditorStatus.innerText = "Saving...";
+            clearTimeout(saveTimeout);
+
+            saveTimeout = setTimeout(async () => {
+                try {
+                    await db.collection("pages").doc(activePageId).update({
+                        title: elPageTitle.value,
+                        content: elPageContent.value,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedBy: userProfile.email
+                    });
+                    elEditorStatus.innerText = "Saved";
+                } catch (err) {
+                    console.error("Save error:", err);
+                    elEditorStatus.innerText = "Save failed";
+                }
+            }, 400);
+        }
+
+        // Actions
+        async function createNewPage() {
+            if (!userProfile || !userProfile.approved) {
+                showToast("Cannot create pages: Account pending approval.");
+                return;
+            }
+
+            try {
+                const docRef = await db.collection("pages").add({
+                    title: "Untitled Page",
+                    content: "",
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedBy: userProfile.email
+                });
+                activePageId = docRef.id;
+                showToast("New page created");
+            } catch (err) {
+                console.error("Create page error:", err);
+                showToast("Error creating page");
+            }
+        }
+
+        async function deleteCurrentPage() {
+            if (!userProfile || !userProfile.approved || !activePageId) {
+                showToast("Cannot delete: Permission denied.");
+                return;
+            }
+
+            try {
+                await db.collection("pages").doc(activePageId).delete();
+                activePageId = null;
+                showToast("Page deleted");
+            } catch (err) {
+                console.error("Delete page error:", err);
+                showToast("Error deleting page");
+            }
+        }
+
+        // Authentication Handlers
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            elAuthError.classList.add("hidden");
+
+            const email = elAuthEmail.value.trim();
+            const password = elAuthPassword.value;
+
+            try {
+                if (isRegisterMode) {
+                    // Check if 'users' collection is empty to AUTO-GRANT FIRST USER ADMIN
+                    const usersSnap = await db.collection("users").get();
+                    const isFirstUser = usersSnap.empty;
+
+                    const cred = await auth.createUserWithEmailAndPassword(email, password);
+
+                    // Save profile to Firestore 'users' collection (ID = user.uid)
+                    await db.collection("users").doc(cred.user.uid).set({
+                        email: email,
+                        approved: isFirstUser ? true : false,
+                        isAdmin: isFirstUser ? true : false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    if (isFirstUser) {
+                        showToast("Registered! You are the first user and have been granted ADMIN access.");
+                    } else {
+                        showToast("Registered! Account is pending admin approval.");
+                    }
+                } else {
+                    await auth.signInWithEmailAndPassword(email, password);
+                    showToast("Signed in successfully");
+                }
+                toggleAuthModal(false);
+            } catch (err) {
+                console.error("Auth error:", err);
+                elAuthError.innerText = err.message || "Authentication failed";
+                elAuthError.classList.remove("hidden");
+            }
+        }
+
+        function handleSignOut() {
+            auth.signOut();
+            showToast("Signed out");
+        }
+
+        function toggleAuthModal(show) {
+            if (show) {
+                elAuthModal.classList.remove("hidden");
+                elAuthError.classList.add("hidden");
+            } else {
+                elAuthModal.classList.add("hidden");
+            }
+        }
+
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            if (isRegisterMode) {
+                elAuthModalTitle.innerText = "Register Account";
+                elAuthSubmitBtn.innerText = "Register";
+                elAuthToggleBtn.innerText = "Switch to Sign In";
+            } else {
+                elAuthModalTitle.innerText = "Sign In";
+                elAuthSubmitBtn.innerText = "Sign In";
+                elAuthToggleBtn.innerText = "Switch to Register";
+            }
+        }
+
+        // Admin Panel Handlers
+        function toggleAdminModal(show) {
+            if (show) {
+                elAdminModal.classList.remove("hidden");
+            } else {
+                elAdminModal.classList.add("hidden");
+            }
+        }
+
+        function renderAdminTable(users) {
+            elAdminUserRows.innerHTML = "";
+            if (!users || users.length === 0) {
+                elAdminUserRows.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#888;">No users registered yet.</td></tr>`;
+                return;
+            }
+
+            users.forEach(u => {
+                const tr = document.createElement("tr");
+
+                tr.innerHTML = `
+          <td>${u.email || u.uid}</td>
+          <td>${u.isAdmin ? 'Admin' : 'Player'}</td>
+          <td>
+            <span class="status-badge ${u.approved ? 'status-approved' : 'status-pending'}">
+              ${u.approved ? 'APPROVED' : 'PENDING'}
+            </span>
+          </td>
+          <td>
+            <button onclick="toggleUserApproval('${u.uid}', ${u.approved})">
+              ${u.approved ? 'Revoke Access' : 'Greenlight / Approve'}
             </button>
+          </td>
+        `;
+                elAdminUserRows.appendChild(tr);
+            });
+        }
 
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-eschaton-600 flex items-center justify-center text-white">
-                <i className="fa-solid fa-shield-halved text-xl"></i>
-              </div>
-              <div>
-                <h3 className="font-bold text-lg">{isRegistering ? "Register TTRPG Player Account" : "Sign In to Campaign Wiki"}</h3>
-                <p className="text-xs text-slate-400">Eschaton Campaign Wiki Access</p>
-              </div>
-            </div>
+        async function toggleUserApproval(uid, currentStatus) {
+            try {
+                await db.collection("users").doc(uid).update({
+                    approved: !currentStatus
+                });
+                showToast("User approval status updated");
+            } catch (err) {
+                console.error("Update approval error:", err);
+                showToast("Failed to update status");
+            }
+        }
 
-            <form onSubmit={handleSubmit} className="space-y-3">
-              {isRegistering && (
-                <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">Character / Display Name</label>
-                  <input 
-                    type="text" 
-                    required 
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value)}
-                    placeholder="e.g. Valen the Paladin"
-                    className="w-full bg-darkbg border border-darkborder rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-eschaton-500"
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">Email Address</label>
-                <input 
-                  type="email" 
-                  required 
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="player@domain.com"
-                  className="w-full bg-darkbg border border-darkborder rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-eschaton-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">Password</label>
-                <input 
-                  type="password" 
-                  required 
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-darkbg border border-darkborder rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-eschaton-500"
-                />
-              </div>
-
-              {isRegistering && (
-                <div className="bg-amber-950/40 border border-amber-600/30 p-2.5 rounded text-[11px] text-amber-200">
-                  <i className="fa-solid fa-info-circle mr-1 text-amber-400"></i>
-                  Note: Newly registered emails start with <code>approved: false</code> and require GM Admin greenlight before edit access is granted.
-                </div>
-              )}
-
-              <button 
-                type="submit"
-                className="w-full bg-eschaton-600 hover:bg-eschaton-500 text-white font-semibold py-2 rounded-lg text-xs transition shadow-lg shadow-eschaton-900/50 mt-2"
-              >
-                {isRegistering ? "Create Account (Pending Approval)" : "Sign In / Switch"}
-              </button>
-            </form>
-
-            <div className="mt-4 pt-4 border-t border-darkborder flex items-center justify-between text-xs text-slate-400">
-              <button onClick={() => setIsRegistering(!isRegistering)} className="text-eschaton-400 hover:underline">
-                {isRegistering ? "Already have an account? Sign in" : "Need an account? Register here"}
-              </button>
-            </div>
-
-            <!-- Demo Quick Switch User List -->
-            <div className="mt-4 pt-3 border-t border-darkborder">
-              <span className="text-[10px] font-mono text-slate-500 block mb-2 uppercase">Quick Demo User Selector:</span>
-              <div className="grid grid-cols-2 gap-1.5">
-                {usersList.map(u => (
-                  <button
-                    key={u.uid}
-                    onClick={() => {
-                      onLoginUser(u);
-                      onClose();
-                    }}
-                    className="p-1.5 bg-darkbg hover:bg-darkcard border border-darkborder rounded text-left text-[11px] transition flex items-center justify-between"
-                  >
-                    <span className="truncate">{u.name}</span>
-                    <span className={`text-[9px] px-1 rounded font-mono ${u.approved ? 'bg-emerald-950 text-emerald-400' : 'bg-amber-950 text-amber-400'}`}>
-                      {u.approved ? 'Approved' : 'Pending'}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        </div>
-      );
-    }
-
-    <!-- ADMIN APPROVAL GATEKEEPER MODAL -->
-    function AdminPortalModal({ onClose, usersList, currentUser, onToggleApproval, onApproveAll }) {
-      return (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-darksurface border border-darkborder w-full max-w-2xl rounded-xl p-6 shadow-2xl relative flex flex-col max-h-[85vh]">
-            <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white">
-              <i className="fa-solid fa-xmark"></i>
-            </button>
-
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-bold">
-                <i className="fa-solid fa-user-shield text-xl"></i>
-              </div>
-              <div>
-                <h3 className="font-bold text-lg text-white">GM Admin Gatekeeper Portal</h3>
-                <p className="text-xs text-slate-400">Greenlight player emails to permit page editing & creation</p>
-              </div>
-            </div>
-
-            <!-- Header Controls -->
-            <div className="flex items-center justify-between bg-darkbg p-3 rounded-lg border border-darkborder mb-4">
-              <div className="text-xs font-mono">
-                Total Registered Users: <span className="text-white font-bold">{usersList.length}</span> | 
-                Approved: <span className="text-emerald-400 font-bold">{usersList.filter(u => u.approved).length}</span> | 
-                Pending: <span className="text-amber-400 font-bold">{usersList.filter(u => !u.approved).length}</span>
-              </div>
-              <button 
-                onClick={onApproveAll}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-xs font-semibold transition"
-              >
-                Greenlight All Pending Users
-              </button>
-            </div>
-
-            <!-- Users List Table -->
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-              {usersList.map(u => (
-                <div key={u.uid} className="bg-darkcard border border-darkborder p-3 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${u.approved ? 'bg-emerald-900 text-emerald-200' : 'bg-amber-900 text-amber-200'}`}>
-                      {u.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-xs text-slate-100 flex items-center space-x-2">
-                        <span>{u.name}</span>
-                        {u.role === "Admin" && (
-                          <span className="bg-amber-500/20 text-amber-400 text-[10px] px-1.5 py-0.2 rounded border border-amber-500/30">GM</span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-slate-400 font-mono">{u.email}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-mono font-semibold ${
-                      u.approved 
-                        ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-700/50' 
-                        : 'bg-amber-950/80 text-amber-400 border border-amber-700/50'
-                    }`}>
-                      {u.approved ? "APPROVED" : "PENDING"}
-                    </span>
-
-                    <button
-                      onClick={() => onToggleApproval(u.uid)}
-                      className={`px-3 py-1.5 rounded text-xs font-medium transition ${
-                        u.approved 
-                          ? 'bg-slate-800 hover:bg-rose-900/60 text-slate-300 hover:text-rose-200 border border-slate-700' 
-                          : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'
-                      }`}
-                    >
-                      {u.approved ? "Revoke Access" : "Greenlight Email"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-darkborder text-[11px] text-slate-500 font-mono text-center">
-              Changes take effect immediately across all active realtime client sessions.
-            </div>
-
-          </div>
-        </div>
-      );
-    }
-
-    // Render the React App
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-  </script>
+        function showToast(msg) {
+            elToast.innerText = msg;
+            elToast.classList.remove("hidden");
+            setTimeout(() => elToast.classList.add("hidden"), 3000);
+        }
+    </script>
 </body>
+
 </html>

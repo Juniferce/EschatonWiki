@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>THE Eschaton Wiki</title>
+  <title>Eschaton Wiki</title>
   
   <style>
-    /* Clean, ultra-barebones monochrome aesthetic */
+    /* Clean monochrome aesthetic */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -352,7 +352,7 @@
       border-bottom-color: #111111;
     }
 
-    .tags-input {
+    .tags-input, .aliases-input {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 12px;
       color: #444;
@@ -362,7 +362,7 @@
       width: 100%;
     }
 
-    .tags-input:focus {
+    .tags-input:focus, .aliases-input:focus {
       border-bottom-color: #888888;
     }
 
@@ -395,7 +395,7 @@
       outline: none;
     }
 
-    /* Rendered View mode for Markdown, Tags & Checklists */
+    /* Rendered View mode */
     .rendered-view {
       flex: 1;
       min-height: 240px;
@@ -422,6 +422,18 @@
     .tag-badge:hover {
       background-color: #e0e0e0;
       border-color: #111;
+    }
+
+    .alias-badge {
+      display: inline-block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      padding: 1px 6px;
+      background-color: #fcfcfc;
+      border: 1px dashed #adadad;
+      border-radius: 3px;
+      color: #555;
+      margin-right: 4px;
     }
 
     .wiki-link {
@@ -701,7 +713,7 @@
           <button id="new-folder-btn" onclick="createNewItem('folder')">+ Folder</button>
           <button onclick="toggleCollapseAll()" title="Collapse All Tree Nodes">Collapse</button>
         </div>
-        <input type="text" id="search-input" class="search-box" placeholder="Search title, text, or #tag..." oninput="handleSearchInput()" />
+        <input type="text" id="search-input" class="search-box" placeholder="Search title, content, alias, or #tag..." oninput="handleSearchInput()" />
       </div>
 
       <!-- Drag & Drop Tree Container -->
@@ -724,8 +736,16 @@
             <span id="editor-author">Author: -</span>
           </div>
         </div>
+        
         <input type="text" id="item-title" class="title-input" placeholder="Title..." oninput="handleEditorInput()" />
+        
+        <!-- Editable Tags & Aliases Inputs for Edit Mode -->
         <input type="text" id="item-tags" class="tags-input" placeholder="Add tags (e.g. #npc #location #act1)..." oninput="handleEditorInput()" />
+        <input type="text" id="item-aliases" class="aliases-input" placeholder="Add aliases (e.g. Shadow King, Maelor, Lord of Ash)..." oninput="handleEditorInput()" />
+        
+        <!-- Read-Only View Headers for Tags & Aliases -->
+        <div id="view-tags-container" class="hidden" style="margin-top: 4px;"></div>
+        <div id="view-aliases-container" class="hidden" style="margin-top: 4px;"></div>
       </div>
 
       <div class="editor-body">
@@ -776,7 +796,8 @@
       </div>
 
       <form onsubmit="handleAuthSubmit(event)">
-        <div class="form-group" id="username-group">
+        <!-- Username input hidden by default during Sign In mode -->
+        <div class="form-group hidden" id="username-group">
           <label>Display Name / Username</label>
           <input type="text" id="auth-username" placeholder="e.g. your Name, your Username" />
         </div>
@@ -937,6 +958,10 @@
     const elBreadcrumbs = document.getElementById("breadcrumbs");
     const elItemTitle = document.getElementById("item-title");
     const elItemTags = document.getElementById("item-tags");
+    const elItemAliases = document.getElementById("item-aliases");
+    const elViewTagsContainer = document.getElementById("view-tags-container");
+    const elViewAliasesContainer = document.getElementById("view-aliases-container");
+
     const elItemContent = document.getElementById("item-content");
     const elRenderedView = document.getElementById("rendered-view");
     const elSlashPopup = document.getElementById("slash-popup");
@@ -1040,6 +1065,7 @@
             title: data.title || "Untitled",
             content: data.content || "",
             tags: Array.isArray(data.tags) ? data.tags : (typeof data.tags === 'string' ? parseTagsString(data.tags) : []),
+            aliases: Array.isArray(data.aliases) ? data.aliases : (typeof data.aliases === 'string' ? parseAliasesString(data.aliases) : []),
             type: data.type || "page",
             parentId: data.parentId || null,
             order: typeof data.order === "number" ? data.order : 0,
@@ -1062,7 +1088,7 @@
       });
     }
 
-    // Parse tag string like "#npc #quest location" into clean tag array
+    // Helper functions for tags & aliases
     function parseTagsString(str) {
       if (!str) return [];
       return str.split(/[\s,]+/)
@@ -1070,7 +1096,14 @@
         .filter(t => t.length > 0);
     }
 
-    // 3. Realtime Users Subscription ('users' collection for Admin Panel)
+    function parseAliasesString(str) {
+      if (!str) return [];
+      return str.split(',')
+        .map(a => a.trim())
+        .filter(a => a.length > 0);
+    }
+
+    // 3. Realtime Users Subscription ('users' collection)
     function initUsersRealtimeListener() {
       db.collection("users").onSnapshot(snapshot => {
         const users = [];
@@ -1189,7 +1222,7 @@
       renderActiveItem();
     }
 
-    // TREE VIEW BUILDER WITH TAG SEARCH SUPPORT
+    // TREE VIEW BUILDER
     function renderTree() {
       elTreeContainer.innerHTML = "";
       if (itemsList.length === 0) {
@@ -1212,7 +1245,8 @@
           filteredItems = itemsList.filter(i => 
             i.title.toLowerCase().includes(q) || 
             i.content.toLowerCase().includes(q) ||
-            (i.tags || []).some(t => t.toLowerCase().includes(q))
+            (i.tags || []).some(t => t.toLowerCase().includes(q)) ||
+            (i.aliases || []).some(a => a.toLowerCase().includes(q))
           );
         }
       }
@@ -1259,26 +1293,33 @@
         row.ondragend = handleDragEnd;
       }
 
-      // Right-Click Context Menu Trigger
+      // Context Menu
       row.oncontextmenu = (e) => {
         e.preventDefault();
         e.stopPropagation();
         openContextMenu(e, item.id);
       };
 
+      // Single Click: Select and Open Document (Does NOT collapse/expand)
       row.onclick = (e) => {
         e.stopPropagation();
         activeItemId = item.id;
         updateUserPresence();
-        if (hasChildren || isFolder) {
-          if (expandedNodeIds.has(item.id)) expandedNodeIds.delete(item.id);
-          else expandedNodeIds.add(item.id);
-        }
         renderTree();
         renderActiveItem();
       };
 
-      // Expand/Collapse Chevron (text-based)
+      // Double Click: Toggle Expand/Collapse Node
+      row.ondblclick = (e) => {
+        e.stopPropagation();
+        if (hasChildren || isFolder) {
+          if (expandedNodeIds.has(item.id)) expandedNodeIds.delete(item.id);
+          else expandedNodeIds.add(item.id);
+          renderTree();
+        }
+      };
+
+      // Chevron Click: Toggle Expand/Collapse
       const chevron = document.createElement("span");
       chevron.className = "tree-chevron";
       if (hasChildren || isFolder) {
@@ -1293,7 +1334,6 @@
         chevron.style.visibility = "hidden";
       }
 
-      // Icon (Clean Minimalist Text Indicator)
       const icon = document.createElement("span");
       icon.className = "tree-icon";
       icon.innerText = isFolder ? "[f]" : "[p]";
@@ -1301,7 +1341,7 @@
       row.appendChild(chevron);
       row.appendChild(icon);
 
-      // Title or Inline Input for Renaming
+      // Inline Input for Renaming or Title Display
       if (inlineEditingItemId === item.id) {
         const inlineInput = document.createElement("input");
         inlineInput.type = "text";
@@ -1325,10 +1365,7 @@
           }
         };
 
-        inlineInput.onblur = () => {
-          commitSave();
-        };
-
+        inlineInput.onblur = () => commitSave();
         inlineInput.onclick = (e) => e.stopPropagation();
 
         row.appendChild(inlineInput);
@@ -1346,7 +1383,7 @@
 
       nodeContainer.appendChild(row);
 
-      // Render Children Sub-tree
+      // Render Children
       if (hasChildren && searchQuery.trim() === "") {
         const childrenContainer = document.createElement("div");
         childrenContainer.className = `tree-children ${isExpanded ? '' : 'collapsed'}`;
@@ -1418,7 +1455,7 @@
       renderTree();
     }
 
-    // Delete Logic using In-Website Custom Modal
+    // Delete Logic
     function deleteItemById(id) {
       if (!userProfile || !userProfile.approved) return;
       const item = itemsList.find(i => i.id === id);
@@ -1637,7 +1674,7 @@
       return false;
     }
 
-    // EDITOR AREA, RENDERER & BREADCRUMBS
+    // EDITOR AREA & RENDERER
     function renderActiveItem() {
       if (itemsList.length === 0 || !activeItemId) {
         elMainEditor.classList.add("hidden");
@@ -1658,8 +1695,14 @@
       }
 
       const tagsArray = item.tags || [];
+      const aliasesArray = item.aliases || [];
+
       if (document.activeElement !== elItemTags) {
         elItemTags.value = tagsArray.map(t => `#${t}`).join(" ");
+      }
+
+      if (document.activeElement !== elItemAliases) {
+        elItemAliases.value = aliasesArray.join(", ");
       }
 
       const isFolder = item.type === "folder";
@@ -1667,8 +1710,22 @@
       elEditorAuthor.innerText = `Author: ${item.updatedBy || 'Unknown'}`;
 
       const canEdit = userProfile && userProfile.approved;
-      elItemTitle.disabled = !canEdit || currentMode === "view";
-      elItemTags.disabled = !canEdit || currentMode === "view";
+      const isEditing = canEdit && currentMode === "edit";
+
+      elItemTitle.disabled = !isEditing;
+      
+      if (isEditing) {
+        elItemTags.classList.remove("hidden");
+        elItemAliases.classList.remove("hidden");
+        elViewTagsContainer.classList.add("hidden");
+        elViewAliasesContainer.classList.add("hidden");
+      } else {
+        elItemTags.classList.add("hidden");
+        elItemAliases.classList.add("hidden");
+        
+        // Render Read-Only View Headers for Tags & Aliases
+        renderViewTagsAndAliases(tagsArray, aliasesArray);
+      }
 
       updateStatsBar(item.content || "");
 
@@ -1676,7 +1733,7 @@
         elItemContent.classList.add("hidden");
         elRenderedView.classList.add("hidden");
       } else {
-        if (currentMode === "edit" && canEdit) {
+        if (isEditing) {
           elItemContent.classList.remove("hidden");
           elRenderedView.classList.add("hidden");
           if (document.activeElement !== elItemContent) {
@@ -1685,7 +1742,7 @@
         } else {
           elItemContent.classList.add("hidden");
           elRenderedView.classList.remove("hidden");
-          renderFormattedView(item.content || "", tagsArray);
+          renderFormattedView(item.content || "");
         }
       }
 
@@ -1693,6 +1750,24 @@
 
       renderSubitems(item);
       renderBacklinks(item);
+    }
+
+    function renderViewTagsAndAliases(tagsArray, aliasesArray) {
+      if (tagsArray.length > 0) {
+        elViewTagsContainer.innerHTML = `<span style="font-size: 11px; color: #666; font-family: monospace; margin-right: 6px;">Tags:</span>` +
+          tagsArray.map(t => `<span class="tag-badge" onclick="filterByTag('${escapeHtmlAttr(t)}')">#${escapeHtml(t)}</span>`).join("");
+        elViewTagsContainer.classList.remove("hidden");
+      } else {
+        elViewTagsContainer.classList.add("hidden");
+      }
+
+      if (aliasesArray.length > 0) {
+        elViewAliasesContainer.innerHTML = `<span style="font-size: 11px; color: #666; font-family: monospace; margin-right: 6px;">Aliases:</span>` +
+          aliasesArray.map(a => `<span class="alias-badge">${escapeHtml(a)}</span>`).join("");
+        elViewAliasesContainer.classList.remove("hidden");
+      } else {
+        elViewAliasesContainer.classList.add("hidden");
+      }
     }
 
     function updateStatsBar(content) {
@@ -1704,24 +1779,14 @@
       elStatsBar.innerText = `${words} words • ${chars} chars • ${readTime} min read`;
     }
 
-    // Render Formatted View mode (Markdown, Tags & Checklists)
-    function renderFormattedView(content, tagsArray) {
-      let html = "";
-
-      // Render Tags Bar at the top of formatted view if tags exist
-      if (tagsArray && tagsArray.length > 0) {
-        html += `<div style="margin-bottom: 12px;">`;
-        tagsArray.forEach(t => {
-          html += `<span class="tag-badge" onclick="filterByTag('${escapeHtmlAttr(t)}')">#${escapeHtml(t)}</span>`;
-        });
-        html += `</div>`;
-      }
-
-      if (!content && (!tagsArray || tagsArray.length === 0)) {
+    // Render Formatted View Mode
+    function renderFormattedView(content) {
+      if (!content) {
         elRenderedView.innerHTML = '<em style="color:#888;">(Empty page)</em>';
         return;
       }
 
+      let html = "";
       const lines = (content || "").split('\n');
 
       lines.forEach((line, lineIdx) => {
@@ -1780,7 +1845,7 @@
       const updatedContent = lines.join('\n');
       item.content = updatedContent;
       elItemContent.value = updatedContent;
-      renderFormattedView(updatedContent, item.tags);
+      renderFormattedView(updatedContent);
       updateStatsBar(updatedContent);
 
       try {
@@ -1796,7 +1861,10 @@
     }
 
     function navigateToPageByTitle(pageTitle) {
-      const page = itemsList.find(i => i.title.toLowerCase() === pageTitle.toLowerCase());
+      const page = itemsList.find(i => 
+        i.title.toLowerCase() === pageTitle.toLowerCase() ||
+        (i.aliases || []).some(a => a.toLowerCase() === pageTitle.toLowerCase())
+      );
       if (page) {
         activeItemId = page.id;
         updateUserPresence();
@@ -1807,7 +1875,7 @@
       }
     }
 
-    // Slash Commands and [[WikiLinks]] Autocomplete in Textarea
+    // Slash Commands and [[WikiLinks]] Autocomplete
     function handleEditorKeyup(e) {
       if (e.key === "Escape") {
         hideSlashPopup();
@@ -1820,7 +1888,7 @@
       const caret = textarea.selectionStart;
       const textBeforeCaret = val.slice(0, caret);
 
-      // 1. Check for WikiLink trigger [[
+      // Check for WikiLink trigger [[
       const wikiMatch = textBeforeCaret.match(/\[\[([^\]\n]*)$/);
       if (wikiMatch) {
         const query = wikiMatch[1].toLowerCase();
@@ -1831,7 +1899,7 @@
         hideWikilinkPopup();
       }
 
-      // 2. Check for Slash Command trigger /
+      // Check for Slash Command trigger /
       const lineBeforeCaret = textBeforeCaret.split('\n').pop();
       const slashMatch = lineBeforeCaret.match(/(?:^|\s)\/([a-zA-Z0-9]*)$/);
       if (slashMatch) {
@@ -1888,7 +1956,12 @@
     }
 
     function showWikilinkPopup(query) {
-      const pages = itemsList.filter(i => i.type === 'page' && i.title.toLowerCase().includes(query));
+      const pages = itemsList.filter(i => 
+        i.type === 'page' && (
+          i.title.toLowerCase().includes(query) ||
+          (i.aliases || []).some(a => a.toLowerCase().includes(query))
+        )
+      );
       if (pages.length === 0) {
         hideWikilinkPopup();
         return;
@@ -1898,7 +1971,8 @@
       pages.forEach(p => {
         const item = document.createElement("div");
         item.className = "popup-menu-item";
-        item.innerHTML = `<span>[p] ${escapeHtml(p.title)}</span>`;
+        const aliasText = (p.aliases && p.aliases.length > 0) ? ` <small style="color:#777;">(${p.aliases.join(', ')})</small>` : '';
+        item.innerHTML = `<span>[p] ${escapeHtml(p.title)}${aliasText}</span>`;
         item.onclick = (e) => {
           e.stopPropagation();
           applyWikilink(p.title);
@@ -2009,17 +2083,22 @@
         return;
       }
 
-      const title = (currentItem.title || "").trim();
-      if (!title) {
+      const title = (currentItem.title || "").trim().toLowerCase();
+      const aliases = (currentItem.aliases || []).map(a => a.toLowerCase());
+
+      if (!title && aliases.length === 0) {
         elBacklinksSection.classList.add("hidden");
         return;
       }
 
       const backlinks = itemsList.filter(item => {
         if (item.id === currentItem.id) return false;
-        const content = item.content || "";
-        return content.toLowerCase().includes(`[[${title.toLowerCase()}]]`) || 
-               content.toLowerCase().includes(title.toLowerCase());
+        const content = (item.content || "").toLowerCase();
+        
+        const matchesTitle = title && (content.includes(`[[${title}]]`) || content.includes(title));
+        const matchesAlias = aliases.some(alias => content.includes(`[[${alias}]]`) || content.includes(alias));
+
+        return matchesTitle || matchesAlias;
       });
 
       if (backlinks.length === 0) {
@@ -2054,6 +2133,7 @@
 
       const newContent = elItemContent.value;
       const rawTags = parseTagsString(elItemTags.value);
+      const rawAliases = parseAliasesString(elItemAliases.value);
 
       updateStatsBar(newContent);
       elEditorStatus.innerText = "Saving...";
@@ -2065,6 +2145,7 @@
           await db.collection("pages").doc(activeItemId).update({
             title: elItemTitle.value,
             tags: rawTags,
+            aliases: rawAliases,
             content: item.type === "folder" ? "" : newContent,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: getUserDisplayName(userProfile)
@@ -2093,6 +2174,7 @@
           title: type === 'folder' ? "New Folder" : "Untitled Page",
           content: "",
           tags: [],
+          aliases: [],
           type: type,
           parentId: parentId,
           order: nextOrder,
@@ -2168,8 +2250,13 @@
 
     function toggleAuthModal(show) {
       if (show) {
-        elAuthModal.classList.remove("hidden");
+        isRegisterMode = false;
+        elAuthModalTitle.innerText = "Sign In";
+        elUsernameGroup.classList.add("hidden"); // Ensure username input is hidden for sign in
+        elAuthSubmitBtn.innerText = "Sign In";
+        elAuthToggleBtn.innerText = "Switch to Register";
         elAuthError.classList.add("hidden");
+        elAuthModal.classList.remove("hidden");
       } else {
         elAuthModal.classList.add("hidden");
       }
@@ -2179,12 +2266,12 @@
       isRegisterMode = !isRegisterMode;
       if (isRegisterMode) {
         elAuthModalTitle.innerText = "Register Account";
-        elUsernameGroup.classList.remove("hidden");
+        elUsernameGroup.classList.remove("hidden"); // Show username input for registration
         elAuthSubmitBtn.innerText = "Register";
         elAuthToggleBtn.innerText = "Switch to Sign In";
       } else {
         elAuthModalTitle.innerText = "Sign In";
-        elUsernameGroup.classList.add("hidden");
+        elUsernameGroup.classList.add("hidden"); // Hide username input for sign in
         elAuthSubmitBtn.innerText = "Sign In";
         elAuthToggleBtn.innerText = "Switch to Register";
       }

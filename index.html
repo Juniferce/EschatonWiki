@@ -676,7 +676,7 @@
       <span id="approval-badge" class="status-badge status-pending hidden">Pending Approval</span>
       
       <!-- Editing / Viewing Mode Switch Button -->
-      <button id="mode-toggle-btn" onclick="toggleViewMode()">[Mode: Edit]</button>
+      <button id="mode-toggle-btn" onclick="toggleViewMode()">[Editing]</button>
       
       <button id="profile-btn" class="hidden" onclick="toggleProfileModal(true)">Profile</button>
       <button id="admin-btn" class="hidden" onclick="toggleAdminModal(true)">Admin Gatekeeper</button>
@@ -778,11 +778,11 @@
       <form onsubmit="handleAuthSubmit(event)">
         <div class="form-group" id="username-group">
           <label>Display Name / Username</label>
-          <input type="text" id="auth-username" placeholder="e.g. DungeonMaster, Elminster" />
+          <input type="text" id="auth-username" placeholder="e.g. your Name, your Username" />
         </div>
         <div class="form-group">
           <label>Email Address</label>
-          <input type="email" id="auth-email" required placeholder="player@eschaton.io" />
+          <input type="email" id="auth-email" required placeholder="player@eschaton.wiki" />
         </div>
         <div class="form-group">
           <label>Password</label>
@@ -1174,7 +1174,7 @@
       elNewFolderBtn.disabled = !canEdit;
 
       if (canEdit && elModeToggleBtn.disabled === false) {
-        elModeToggleBtn.innerText = currentMode === "edit" ? "[Mode: Edit]" : "[Mode: View]";
+        elModeToggleBtn.innerText = currentMode === "edit" ? "[Editing]" : "[Viewing]";
       }
 
       renderTree();
@@ -1185,7 +1185,7 @@
     function toggleViewMode() {
       if (!userProfile || !userProfile.approved) return;
       currentMode = currentMode === "edit" ? "view" : "edit";
-      elModeToggleBtn.innerText = currentMode === "edit" ? "[Mode: Edit]" : "[Mode: View]";
+      elModeToggleBtn.innerText = currentMode === "edit" ? "[Editing]" : "[Viewing]";
       renderActiveItem();
     }
 
@@ -1689,7 +1689,7 @@
         }
       }
 
-      elEditorStatus.innerText = canEdit ? (currentMode === "edit" ? "Editing" : "Viewing") : "Read-Only (Pending Greenlight)";
+      elEditorStatus.innerText = canEdit ? (currentMode === "edit" ? "Editing" : "Viewing") : "Read-Only";
 
       renderSubitems(item);
       renderBacklinks(item);
@@ -1943,7 +1943,7 @@
 
       const rootSpan = document.createElement("span");
       rootSpan.className = "breadcrumb-item";
-      rootSpan.innerText = "Vault Root";
+      rootSpan.innerText = "All Notes";
       rootSpan.onclick = () => {
         activeItemId = path[0].id;
         updateUserPresence();

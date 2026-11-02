@@ -1,850 +1,2248 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eschaton Wiki</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>THE Eschaton Wiki</title>
+  
+  <style>
+    /* Clean, ultra-barebones monochrome aesthetic */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-    <style>
-        /* Ultra-barebones, crisp monochrome styling */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #ffffff;
+      color: #111111;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-size: 13px;
+      line-height: 1.4;
+      user-select: none;
+    }
 
-        body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #ffffff;
-            color: #111111;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            font-size: 13px;
-            line-height: 1.5;
-        }
+    /* Controls & Inputs */
+    button {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 8px;
+      background-color: #ffffff;
+      color: #111111;
+      border: 1px solid #111111;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background 0.1s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
 
-        /* Controls & Inputs */
-        button {
-            font-family: inherit;
-            font-size: 12px;
-            font-weight: 500;
-            padding: 5px 10px;
-            background-color: #ffffff;
-            color: #111111;
-            border: 1px solid #111111;
-            border-radius: 3px;
-            cursor: pointer;
-            transition: background 0.1s ease;
-        }
+    button:hover {
+      background-color: #f0f0f0;
+    }
 
-        button:hover {
-            background-color: #f0f0f0;
-        }
+    button:disabled {
+      border-color: #ccc;
+      color: #888;
+      cursor: not-allowed;
+      background-color: #fafafa;
+    }
 
-        button:disabled {
-            border-color: #ccc;
-            color: #888;
-            cursor: not-allowed;
-            background-color: #fafafa;
-        }
+    input[type="text"], input[type="email"], input[type="password"], textarea {
+      font-family: inherit;
+      font-size: 13px;
+      padding: 6px 8px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      background-color: #ffffff;
+      color: #111111;
+      outline: none;
+      user-select: text;
+    }
 
-        input[type="text"],
-        input[type="email"],
-        input[type="password"],
-        textarea {
-            font-family: inherit;
-            font-size: 13px;
-            padding: 6px 8px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            background-color: #ffffff;
-            color: #111111;
-            outline: none;
-        }
+    input:focus, textarea:focus {
+      border-color: #111111;
+    }
 
-        input:focus,
-        textarea:focus {
-            border-color: #111111;
-        }
+    /* Header Bar */
+    header {
+      height: 44px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background-color: #fafafa;
+      flex-shrink: 0;
+    }
 
-        /* Header Bar */
-        header {
-            height: 44px;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 16px;
-            background-color: #fafafa;
-            flex-shrink: 0;
-        }
+    .brand {
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-        .brand {
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            font-size: 13px;
-        }
+    .user-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-        .user-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    .status-badge {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid #ccc;
+      background-color: #f0f0f0;
+    }
 
-        .status-badge {
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            font-size: 11px;
-            padding: 2px 6px;
-            border-radius: 3px;
-            border: 1px solid #ccc;
-            background-color: #f0f0f0;
-        }
+    .status-approved {
+      border-color: #111111;
+      background-color: #111111;
+      color: #ffffff;
+    }
 
-        .status-approved {
-            border-color: #111111;
-            background-color: #111111;
-            color: #ffffff;
-        }
+    .status-pending {
+      border-color: #d97706;
+      color: #b45309;
+      background-color: #fffbeb;
+    }
 
-        .status-pending {
-            border-color: #d97706;
-            color: #b45309;
-            background-color: #fffbeb;
-        }
+    /* Read-Only Warning Banner */
+    .banner {
+      background-color: #fffbeb;
+      border-bottom: 1px solid #fde68a;
+      color: #92400e;
+      padding: 6px 16px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
 
-        /* Read-Only Banner */
-        .banner {
-            background-color: #fffbeb;
-            border-bottom: 1px solid #fde68a;
-            color: #92400e;
-            padding: 6px 16px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+    /* Main Workspace */
+    .workspace {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
 
-        /* Main Workspace */
-        .workspace {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
+    /* Left Sidebar Tree Structure */
+    sidebar {
+      width: 280px;
+      border-right: 1px solid #e0e0e0;
+      background-color: #fafafa;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
 
-        /* Left Sidebar */
-        sidebar {
-            width: 240px;
-            border-right: 1px solid #e0e0e0;
-            background-color: #fafafa;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
+    .sidebar-controls {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
 
-        .sidebar-header {
-            padding: 10px 12px;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    .sidebar-actions {
+      display: flex;
+      gap: 6px;
+    }
 
-        .sidebar-title {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #666;
-        }
+    .sidebar-actions button {
+      flex: 1;
+      justify-content: center;
+    }
 
-        .page-list {
-            list-style: none;
-            overflow-y: auto;
-            flex: 1;
-            padding: 4px 0;
-        }
+    .search-box {
+      width: 100%;
+      font-size: 12px;
+      padding: 4px 6px;
+    }
 
-        .page-item {
-            padding: 8px 12px;
-            font-size: 13px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            color: #444;
-            border-left: 3px solid transparent;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+    .tree-view {
+      overflow-y: auto;
+      flex: 1;
+      padding: 6px 0;
+    }
 
-        .page-item:hover {
-            background-color: #f0f0f0;
-            color: #111;
-        }
+    .tree-node {
+      display: flex;
+      flex-direction: column;
+    }
 
-        .page-item.active {
-            background-color: #ffffff;
-            border-left-color: #111111;
-            font-weight: 600;
-            color: #111;
-        }
+    .tree-row {
+      display: flex;
+      align-items: center;
+      padding: 5px 8px;
+      font-size: 13px;
+      cursor: pointer;
+      color: #333;
+      border-left: 3px solid transparent;
+      position: relative;
+      background-color: transparent;
+      transition: background 0.05s ease;
+    }
 
-        /* Editor Canvas */
-        main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: #ffffff;
-            overflow: hidden;
-        }
+    .tree-row:hover {
+      background-color: #ececec;
+      color: #111;
+    }
 
-        .editor-top {
-            padding: 16px 20px 8px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            border-bottom: 1px solid #f0f0f0;
-        }
+    .tree-row.active {
+      background-color: #ffffff;
+      border-left-color: #111111;
+      font-weight: 600;
+      color: #111;
+    }
 
-        .editor-meta {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 11px;
-            color: #666;
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        }
+    /* Drag & Drop Visual Indicators */
+    .tree-row.drag-over-inside {
+      background-color: #e2e8f0 !important;
+      outline: 1px dashed #111111;
+      outline-offset: -2px;
+    }
 
-        .title-input {
-            font-size: 20px;
-            font-weight: 700;
-            border: none;
-            border-bottom: 1px solid transparent;
-            border-radius: 0;
-            padding: 4px 0;
-            width: 100%;
-        }
+    .tree-row.drag-over-above {
+      border-top: 2px solid #111111 !important;
+    }
 
-        .title-input:focus {
-            border-bottom-color: #111111;
-        }
+    .tree-row.drag-over-below {
+      border-bottom: 2px solid #111111 !important;
+    }
 
-        .editor-body {
-            flex: 1;
-            padding: 16px 20px;
-            display: flex;
-            flex-direction: column;
-        }
+    .tree-chevron {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: #777;
+      cursor: pointer;
+      border-radius: 2px;
+    }
 
-        .content-textarea {
-            flex: 1;
-            width: 100%;
-            height: 100%;
-            border: none;
-            resize: none;
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            color: #222;
-        }
+    .tree-chevron:hover {
+      background-color: #ddd;
+      color: #111;
+    }
 
-        .content-textarea:disabled,
-        .title-input:disabled {
-            background-color: #ffffff;
-            color: #777777;
-            cursor: not-allowed;
-        }
+    .tree-icon {
+      margin-right: 6px;
+      font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      opacity: 0.8;
+      display: inline-block;
+      width: 20px;
+      text-align: center;
+    }
 
-        .empty-state {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #888888;
-            font-size: 13px;
-        }
+    .tree-title {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-        /* Modals & Popups */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
+    .inline-rename-input {
+      font-family: inherit;
+      font-size: 12px;
+      padding: 1px 4px;
+      border: 1px solid #111111;
+      border-radius: 2px;
+      background-color: #ffffff;
+      color: #111111;
+      outline: none;
+      flex: 1;
+      height: 20px;
+    }
 
-        .modal {
-            background-color: #ffffff;
-            border: 1px solid #111111;
-            width: 100%;
-            max-width: 420px;
-            padding: 20px;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
+    .tree-children {
+      display: flex;
+      flex-direction: column;
+    }
 
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #eee;
-        }
+    .tree-children.collapsed {
+      display: none;
+    }
 
-        .modal-title {
-            font-weight: 700;
-            font-size: 14px;
-        }
+    /* Main Workspace Editor */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: #ffffff;
+      overflow: hidden;
+      position: relative;
+    }
 
-        .form-group {
-            margin-bottom: 12px;
-        }
+    .breadcrumbs {
+      padding: 10px 20px 0 20px;
+      font-size: 11px;
+      color: #666;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
 
-        .form-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-            color: #555;
-        }
+    .breadcrumb-item {
+      cursor: pointer;
+    }
 
-        .form-group input {
-            width: 100%;
-        }
+    .breadcrumb-item:hover {
+      text-decoration: underline;
+      color: #111;
+    }
 
-        .user-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-            margin-top: 8px;
-        }
+    .editor-top {
+      padding: 12px 20px 8px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border-bottom: 1px solid #f0f0f0;
+    }
 
-        .user-table th,
-        .user-table td {
-            border: 1px solid #e0e0e0;
-            padding: 6px 8px;
-            text-align: left;
-        }
+    .editor-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #666;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
 
-        .user-table th {
-            background-color: #fafafa;
-            font-weight: 600;
-        }
+    .meta-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-        .toast {
-            position: fixed;
-            bottom: 16px;
-            right: 16px;
-            background-color: #111111;
-            color: #ffffff;
-            padding: 8px 12px;
-            border-radius: 3px;
-            font-size: 12px;
-            z-index: 200;
-        }
+    .presence-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
 
-        .hidden {
-            display: none !important;
-        }
-    </style>
+    .title-input {
+      font-size: 22px;
+      font-weight: 700;
+      border: none;
+      border-bottom: 1px solid transparent;
+      border-radius: 0;
+      padding: 4px 0;
+      width: 100%;
+    }
 
-    <!-- Firebase v10 Compat SDK (Reliable for vanilla single-file applications) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    .title-input:focus {
+      border-bottom-color: #111111;
+    }
+
+    .tags-input {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      color: #444;
+      border: none;
+      border-bottom: 1px solid transparent;
+      padding: 2px 0;
+      width: 100%;
+    }
+
+    .tags-input:focus {
+      border-bottom-color: #888888;
+    }
+
+    .editor-body {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .editor-view-container {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .content-textarea {
+      flex: 1;
+      min-height: 240px;
+      width: 100%;
+      border: none;
+      resize: none;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #222;
+      outline: none;
+    }
+
+    /* Rendered View mode for Markdown, Tags & Checklists */
+    .rendered-view {
+      flex: 1;
+      min-height: 240px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #111;
+      user-select: text;
+    }
+
+    .tag-badge {
+      display: inline-block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      padding: 1px 6px;
+      background-color: #f0f0f0;
+      border: 1px solid #d0d0d0;
+      border-radius: 3px;
+      color: #333;
+      margin-right: 4px;
+      cursor: pointer;
+    }
+
+    .tag-badge:hover {
+      background-color: #e0e0e0;
+      border-color: #111;
+    }
+
+    .wiki-link {
+      color: #111111;
+      font-weight: 600;
+      text-decoration: underline;
+      cursor: pointer;
+      background-color: #f3f4f6;
+      padding: 1px 4px;
+      border-radius: 2px;
+    }
+
+    .wiki-link:hover {
+      background-color: #e2e8f0;
+    }
+
+    .checklist-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .checklist-row.checked {
+      opacity: 0.6;
+    }
+
+    .checklist-row input[type="checkbox"] {
+      cursor: pointer;
+    }
+
+    /* Slash & Wiki Popup Autocomplete Floating Lists */
+    .popup-menu {
+      position: absolute;
+      background-color: #ffffff;
+      border: 1px solid #111111;
+      box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.15);
+      border-radius: 3px;
+      z-index: 500;
+      min-width: 180px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 12px;
+      padding: 4px 0;
+    }
+
+    .popup-menu-item {
+      padding: 6px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #111;
+    }
+
+    .popup-menu-item:hover, .popup-menu-item.selected {
+      background-color: #f0f0f0;
+      font-weight: 600;
+    }
+
+    /* Subitems & Backlinks Section */
+    .subitems-container {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px dashed #e0e0e0;
+      user-select: text;
+    }
+
+    .subitems-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .subitems-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px;
+    }
+
+    .subitem-card {
+      border: 1px solid #e0e0e0;
+      padding: 8px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      background-color: #fafafa;
+    }
+
+    .subitem-card:hover {
+      border-color: #111;
+      background-color: #fff;
+    }
+
+    /* Right-Click Context Menu */
+    .context-menu {
+      position: fixed;
+      background-color: #ffffff;
+      border: 1px solid #111111;
+      box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.15);
+      border-radius: 3px;
+      padding: 4px 0;
+      z-index: 1000;
+      min-width: 150px;
+      font-size: 12px;
+    }
+
+    .context-menu-item {
+      padding: 6px 12px;
+      cursor: pointer;
+      color: #111111;
+    }
+
+    .context-menu-item:hover {
+      background-color: #f0f0f0;
+    }
+
+    .context-menu-item.danger {
+      color: #c53030;
+    }
+
+    .context-menu-item.danger:hover {
+      background-color: #fff5f5;
+    }
+
+    .context-menu-divider {
+      height: 1px;
+      background-color: #e0e0e0;
+      margin: 4px 0;
+    }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #888888;
+      font-size: 13px;
+      gap: 12px;
+    }
+
+    /* Modals & Popups */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .modal {
+      background-color: #ffffff;
+      border: 1px solid #111111;
+      width: 100%;
+      max-width: 440px;
+      padding: 20px;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      user-select: text;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .modal-title {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      color: #555;
+    }
+
+    .form-group input {
+      width: 100%;
+    }
+
+    .user-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .user-table th, .user-table td {
+      border: 1px solid #e0e0e0;
+      padding: 6px 8px;
+      text-align: left;
+    }
+
+    .user-table th {
+      background-color: #fafafa;
+      font-weight: 600;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background-color: #111111;
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 3px;
+      font-size: 12px;
+      z-index: 200;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+
+  <!-- Firebase v10 Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
-
 <body>
 
-    <!-- Header Nav -->
-    <header>
-        <div class="brand">ESCHATON WIKI</div>
-
-        <div class="user-actions">
-            <span id="user-display" class="status-badge">Not Signed In</span>
-            <span id="approval-badge" class="status-badge status-pending hidden">Pending Approval</span>
-
-            <button id="admin-btn" class="hidden" onclick="toggleAdminModal(true)">Admin Panel</button>
-            <button id="auth-btn" onclick="toggleAuthModal(true)">Sign In / Register</button>
-            <button id="signout-btn" class="hidden" onclick="handleSignOut()">Sign Out</button>
-        </div>
-    </header>
-
-    <!-- Unapproved Warning Banner -->
-    <div id="pending-banner" class="banner hidden">
-        <span>⚠️ <strong>Account Pending Admin Approval:</strong> You are in Read-Only mode. Ask an Admin user to
-            greenlight your email.</span>
+  <!-- Header Nav -->
+  <header>
+    <div class="brand">
+      ESCHATON WIKI
     </div>
 
-    <!-- Workspace Container -->
-    <div class="workspace">
-
-        <!-- Left Sidebar -->
-        <sidebar>
-            <div class="sidebar-header">
-                <span class="sidebar-title">Pages</span>
-                <button id="new-page-btn" onclick="createNewPage()">+ New Page</button>
-            </div>
-            <ul id="pages-list" class="page-list"></ul>
-        </sidebar>
-
-        <!-- Main Note Editor -->
-        <main id="main-editor">
-            <div class="editor-top">
-                <div class="editor-meta">
-                    <span id="editor-status">Ready</span>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <span id="editor-author">Author: -</span>
-                        <button id="delete-page-btn" onclick="deleteCurrentPage()"
-                            style="padding: 2px 6px; font-size: 11px;">Delete Page</button>
-                    </div>
-                </div>
-                <input type="text" id="page-title" class="title-input" placeholder="Page Title..."
-                    oninput="handleEditorInput()" />
-            </div>
-
-            <div class="editor-body">
-                <textarea id="page-content" class="content-textarea" placeholder="Start typing notes..."
-                    oninput="handleEditorInput()"></textarea>
-            </div>
-        </main>
-
-        <!-- Empty Workspace Fallback State -->
-        <div id="empty-workspace" class="empty-state hidden">
-            No pages in campaign. Click "+ New Page" on the left to create your first document.
-        </div>
+    <div class="user-actions">
+      <span id="user-display" class="status-badge">Not Signed In</span>
+      <span id="approval-badge" class="status-badge status-pending hidden">Pending Approval</span>
+      
+      <!-- Editing / Viewing Mode Switch Button -->
+      <button id="mode-toggle-btn" onclick="toggleViewMode()">[Mode: Edit]</button>
+      
+      <button id="profile-btn" class="hidden" onclick="toggleProfileModal(true)">Profile</button>
+      <button id="admin-btn" class="hidden" onclick="toggleAdminModal(true)">Admin Gatekeeper</button>
+      <button id="auth-btn" onclick="toggleAuthModal(true)">Sign In / Register</button>
+      <button id="signout-btn" class="hidden" onclick="handleSignOut()">Sign Out</button>
     </div>
+  </header>
 
-    <!-- Auth Modal -->
-    <div id="auth-modal" class="modal-overlay hidden">
-        <div class="modal">
-            <div class="modal-header">
-                <span class="modal-title" id="auth-modal-title">Sign In</span>
-                <button onclick="toggleAuthModal(false)">✕</button>
-            </div>
+  <!-- Unapproved Warning Banner -->
+  <div id="pending-banner" class="banner hidden">
+    <span><strong>Notice: Account Pending Admin Approval</strong> — You have Read-Only permissions. Ask an Admin user to greenlight your account to edit notes or drag/drop pages.</span>
+  </div>
 
-            <form onsubmit="handleAuthSubmit(event)">
-                <div class="form-group">
-                    <label>Email Address</label>
-                    <input type="email" id="auth-email" required placeholder="player@eschaton.io" />
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="auth-password" required placeholder="••••••••" />
-                </div>
-
-                <div id="auth-error" style="color: #dc2626; font-size: 11px; margin-bottom: 8px;" class="hidden"></div>
-
-                <div style="display: flex; gap: 8px; margin-top: 12px;">
-                    <button type="submit" id="auth-submit-btn"
-                        style="flex: 1; background-color: #111; color: #fff;">Sign In</button>
-                    <button type="button" onclick="toggleAuthMode()" id="auth-toggle-btn">Switch to Register</button>
-                </div>
-            </form>
+  <!-- Workspace Container -->
+  <div class="workspace">
+    
+    <!-- Left Sidebar Drag & Drop Tree -->
+    <sidebar>
+      <div class="sidebar-controls">
+        <div class="sidebar-actions">
+          <button id="new-page-btn" onclick="createNewItem('page')">+ Page</button>
+          <button id="new-folder-btn" onclick="createNewItem('folder')">+ Folder</button>
+          <button onclick="toggleCollapseAll()" title="Collapse All Tree Nodes">Collapse</button>
         </div>
-    </div>
+        <input type="text" id="search-input" class="search-box" placeholder="Search title, text, or #tag..." oninput="handleSearchInput()" />
+      </div>
 
-    <!-- Admin Gatekeeper Modal -->
-    <div id="admin-modal" class="modal-overlay hidden">
-        <div class="modal" style="max-width: 560px;">
-            <div class="modal-header">
-                <span class="modal-title">GM Admin Gatekeeper — User Greenlights</span>
-                <button onclick="toggleAdminModal(false)">✕</button>
-            </div>
+      <!-- Drag & Drop Tree Container -->
+      <div id="tree-container" class="tree-view" ondragover="handleRootDragOver(event)" ondrop="handleRootDrop(event)"></div>
+    </sidebar>
 
-            <p style="font-size: 12px; color: #666; margin-bottom: 12px;">
-                Registered accounts require an <strong>Approved</strong> greenlight status to edit or create pages.
-            </p>
+    <!-- Main Note Editor -->
+    <main id="main-editor">
+      <div id="breadcrumbs" class="breadcrumbs"></div>
 
-            <table class="user-table">
-                <thead>
-                    <tr>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="admin-user-rows"></tbody>
-            </table>
+      <div class="editor-top">
+        <div class="editor-meta">
+          <div class="meta-left">
+            <span id="editor-status">Ready</span>
+            <span id="stats-bar">0 words • 0 chars</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <div id="presence-container" class="presence-group"></div>
+            <span id="editor-type-badge" class="status-badge">Page</span>
+            <span id="editor-author">Author: -</span>
+          </div>
         </div>
+        <input type="text" id="item-title" class="title-input" placeholder="Title..." oninput="handleEditorInput()" />
+        <input type="text" id="item-tags" class="tags-input" placeholder="Add tags (e.g. #npc #location #act1)..." oninput="handleEditorInput()" />
+      </div>
+
+      <div class="editor-body">
+        <div class="editor-view-container">
+          <!-- Raw Text Editor -->
+          <textarea id="item-content" class="content-textarea" placeholder="Start typing notes... Type '/' for commands or '[[' to link notes." oninput="handleEditorInput()" onkeyup="handleEditorKeyup(event)"></textarea>
+
+          <!-- Rendered View Mode -->
+          <div id="rendered-view" class="rendered-view hidden"></div>
+
+          <!-- Floating Autocomplete Popup for Slash Commands -->
+          <div id="slash-popup" class="popup-menu hidden"></div>
+
+          <!-- Floating Autocomplete Popup for [[Wiki Links]] -->
+          <div id="wikilink-popup" class="popup-menu hidden"></div>
+        </div>
+
+        <!-- Nested Sub-items overview -->
+        <div id="subitems-section" class="subitems-container hidden">
+          <div class="subitems-title" id="subitems-title">Sub-items</div>
+          <div id="subitems-grid" class="subitems-grid"></div>
+        </div>
+
+        <!-- Backlinks Footer Section ("Mentioned in:") -->
+        <div id="backlinks-section" class="subitems-container hidden">
+          <div class="subitems-title">Mentioned in:</div>
+          <div id="backlinks-grid" class="subitems-grid"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Empty Workspace Fallback State -->
+    <div id="empty-workspace" class="empty-state hidden">
+      <span>No pages or folders selected.</span>
+      <div style="display: flex; gap: 8px;">
+        <button onclick="createNewItem('page')">+ Create First Page</button>
+        <button onclick="createNewItem('folder')">+ Create First Folder</button>
+      </div>
     </div>
+  </div>
 
-    <!-- Toast Notice -->
-    <div id="toast" class="toast hidden"></div>
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="auth-modal-title">Sign In</span>
+        <button onclick="toggleAuthModal(false)">X</button>
+      </div>
 
-    <!-- App Script -->
-    <script>
-        // Exact User Firebase Config
-        const firebaseConfig = {
-            apiKey: "AIzaSyBeYN6lMzYt_yIMuJVfB_j7eYAD0DRjK9s",
-            authDomain: "eschaton-wiki.firebaseapp.com",
-            projectId: "eschaton-wiki",
-            storageBucket: "eschaton-wiki.firebasestorage.app",
-            messagingSenderId: "614710548622",
-            appId: "1:614710548622:web:b2f8d13f3866cda6fe11df"
-        };
+      <form onsubmit="handleAuthSubmit(event)">
+        <div class="form-group" id="username-group">
+          <label>Display Name / Username</label>
+          <input type="text" id="auth-username" placeholder="e.g. DungeonMaster, Elminster" />
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="auth-email" required placeholder="player@eschaton.io" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="auth-password" required placeholder="••••••••" />
+        </div>
 
-        // Initialize Firebase Services
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        <div id="auth-error" style="color: #dc2626; font-size: 11px; margin-bottom: 8px;" class="hidden"></div>
 
-        // State Management
-        let firebaseUser = null;
-        let userProfile = null;
-        let pagesList = [];
-        let activePageId = null;
-        let isRegisterMode = false;
-        let saveTimeout = null;
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button type="submit" id="auth-submit-btn" style="flex: 1; background-color: #111; color: #fff;">Sign In</button>
+          <button type="button" onclick="toggleAuthMode()" id="auth-toggle-btn">Switch to Register</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-        // DOM References
-        const elUserDisplay = document.getElementById("user-display");
-        const elApprovalBadge = document.getElementById("approval-badge");
-        const elPendingBanner = document.getElementById("pending-banner");
-        const elAdminBtn = document.getElementById("admin-btn");
-        const elAuthBtn = document.getElementById("auth-btn");
-        const elSignoutBtn = document.getElementById("signout-btn");
+  <!-- Profile Modal -->
+  <div id="profile-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">User Profile</span>
+        <button onclick="toggleProfileModal(false)">X</button>
+      </div>
 
-        const elPagesList = document.getElementById("pages-list");
-        const elNewPageBtn = document.getElementById("new-page-btn");
-        const elDeletePageBtn = document.getElementById("delete-page-btn");
+      <form onsubmit="handleProfileSubmit(event)">
+        <div class="form-group">
+          <label>Display Name / Username</label>
+          <input type="text" id="profile-username" required placeholder="Enter username..." />
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+          <button type="button" onclick="toggleProfileModal(false)">Cancel</button>
+          <button type="submit" style="background-color: #111; color: #fff;">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-        const elMainEditor = document.getElementById("main-editor");
-        const elEmptyWorkspace = document.getElementById("empty-workspace");
-        const elPageTitle = document.getElementById("page-title");
-        const elPageContent = document.getElementById("page-content");
-        const elEditorStatus = document.getElementById("editor-status");
-        const elEditorAuthor = document.getElementById("editor-author");
+  <!-- Admin Gatekeeper Modal -->
+  <div id="admin-modal" class="modal-overlay hidden">
+    <div class="modal" style="max-width: 580px;">
+      <div class="modal-header">
+        <span class="modal-title">GM Admin Gatekeeper — User Greenlights</span>
+        <button onclick="toggleAdminModal(false)">X</button>
+      </div>
 
-        const elAuthModal = document.getElementById("auth-modal");
-        const elAuthModalTitle = document.getElementById("auth-modal-title");
-        const elAuthSubmitBtn = document.getElementById("auth-submit-btn");
-        const elAuthToggleBtn = document.getElementById("auth-toggle-btn");
-        const elAuthEmail = document.getElementById("auth-email");
-        const elAuthPassword = document.getElementById("auth-password");
-        const elAuthError = document.getElementById("auth-error");
+      <p style="font-size: 12px; color: #666; margin-bottom: 12px;">
+        Newly registered player accounts require an <strong>Approved</strong> greenlight to edit documents or move items.
+      </p>
 
-        const elAdminModal = document.getElementById("admin-modal");
-        const elAdminUserRows = document.getElementById("admin-user-rows");
-        const elToast = document.getElementById("toast");
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>User / Display Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="admin-user-rows"></tbody>
+      </table>
+    </div>
+  </div>
 
-        // Initialize Realtime Listeners
-        window.addEventListener("DOMContentLoaded", () => {
-            initAuthListener();
-            initPagesRealtimeListener();
-            initUsersRealtimeListener();
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Confirm Delete</span>
+        <button onclick="toggleDeleteModal(false)">X</button>
+      </div>
+      <p id="delete-modal-msg" style="font-size: 13px; color: #111; margin-bottom: 16px; line-height: 1.5;"></p>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button onclick="toggleDeleteModal(false)">Cancel</button>
+        <button id="confirm-delete-btn" onclick="confirmDeleteItem()" style="background-color: #c53030; color: #fff; border-color: #c53030;">Delete Item</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notice -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Right-Click Context Menu -->
+  <div id="context-menu" class="context-menu hidden">
+    <div class="context-menu-item" onclick="handleContextAction('rename')">Rename</div>
+    <div class="context-menu-item" onclick="handleContextAction('subpage')">+ New Sub-page</div>
+    <div class="context-menu-item" onclick="handleContextAction('subfolder')">+ New Sub-folder</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item danger" onclick="handleContextAction('delete')">Delete</div>
+  </div>
+
+  <!-- App Script -->
+  <script>
+    // Exact User Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBeYN6lMzYt_yIMuJVfB_j7eYAD0DRjK9s",
+      authDomain: "eschaton-wiki.firebaseapp.com",
+      projectId: "eschaton-wiki",
+      storageBucket: "eschaton-wiki.firebasestorage.app",
+      messagingSenderId: "614710548622",
+      appId: "1:614710548622:web:b2f8d13f3866cda6fe11df"
+    };
+
+    // Initialize Firebase Services
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // State Management
+    let firebaseUser = null;
+    let userProfile = null;
+    let itemsList = []; // Stores all pages & folders
+    let activeItemId = null;
+    let expandedNodeIds = new Set();
+    let draggedItemId = null;
+    let dragOverTargetId = null;
+    let dragPosition = null; // 'inside', 'above', 'below'
+    let isRegisterMode = false;
+    let saveTimeout = null;
+    let searchQuery = "";
+    let contextTargetId = null;
+    let inlineEditingItemId = null;
+    let itemToDeleteId = null;
+    let currentMode = "edit"; // "edit" or "view"
+
+    // Available Slash Commands Definition
+    const SLASH_COMMANDS = [
+      { cmd: "/h1", label: "Heading 1", snippet: "# " },
+      { cmd: "/h2", label: "Heading 2", snippet: "## " },
+      { cmd: "/bullet", label: "Bullet List Item", snippet: "- " },
+      { cmd: "/check", label: "Checklist Item", snippet: "- [ ] " },
+      { cmd: "/quote", label: "Blockquote", snippet: "> " },
+      { cmd: "/table", label: "Table Template", snippet: "| Column 1 | Column 2 |\n| --- | --- |\n| Item 1 | Item 2 |" }
+    ];
+
+    // DOM References
+    const elUserDisplay = document.getElementById("user-display");
+    const elApprovalBadge = document.getElementById("approval-badge");
+    const elPendingBanner = document.getElementById("pending-banner");
+    const elModeToggleBtn = document.getElementById("mode-toggle-btn");
+    const elProfileBtn = document.getElementById("profile-btn");
+    const elAdminBtn = document.getElementById("admin-btn");
+    const elAuthBtn = document.getElementById("auth-btn");
+    const elSignoutBtn = document.getElementById("signout-btn");
+
+    const elTreeContainer = document.getElementById("tree-container");
+    const elNewPageBtn = document.getElementById("new-page-btn");
+    const elNewFolderBtn = document.getElementById("new-folder-btn");
+
+    const elMainEditor = document.getElementById("main-editor");
+    const elEmptyWorkspace = document.getElementById("empty-workspace");
+    const elBreadcrumbs = document.getElementById("breadcrumbs");
+    const elItemTitle = document.getElementById("item-title");
+    const elItemTags = document.getElementById("item-tags");
+    const elItemContent = document.getElementById("item-content");
+    const elRenderedView = document.getElementById("rendered-view");
+    const elSlashPopup = document.getElementById("slash-popup");
+    const elWikilinkPopup = document.getElementById("wikilink-popup");
+
+    const elEditorStatus = document.getElementById("editor-status");
+    const elStatsBar = document.getElementById("stats-bar");
+    const elPresenceContainer = document.getElementById("presence-container");
+    const elEditorAuthor = document.getElementById("editor-author");
+    const elEditorTypeBadge = document.getElementById("editor-type-badge");
+    
+    const elSubitemsSection = document.getElementById("subitems-section");
+    const elSubitemsTitle = document.getElementById("subitems-title");
+    const elSubitemsGrid = document.getElementById("subitems-grid");
+
+    const elBacklinksSection = document.getElementById("backlinks-section");
+    const elBacklinksGrid = document.getElementById("backlinks-grid");
+
+    const elAuthModal = document.getElementById("auth-modal");
+    const elAuthModalTitle = document.getElementById("auth-modal-title");
+    const elUsernameGroup = document.getElementById("username-group");
+    const elAuthUsername = document.getElementById("auth-username");
+    const elAuthSubmitBtn = document.getElementById("auth-submit-btn");
+    const elAuthToggleBtn = document.getElementById("auth-toggle-btn");
+    const elAuthEmail = document.getElementById("auth-email");
+    const elAuthPassword = document.getElementById("auth-password");
+    const elAuthError = document.getElementById("auth-error");
+
+    const elProfileModal = document.getElementById("profile-modal");
+    const elProfileUsername = document.getElementById("profile-username");
+
+    const elAdminModal = document.getElementById("admin-modal");
+    const elAdminUserRows = document.getElementById("admin-user-rows");
+    const elToast = document.getElementById("toast");
+    const elContextMenu = document.getElementById("context-menu");
+
+    // Initialize Application
+    window.addEventListener("DOMContentLoaded", () => {
+      initAuthListener();
+      initPagesRealtimeListener();
+      initUsersRealtimeListener();
+      initPresenceRealtimeListener();
+
+      // Dismiss context menu and popups on external click
+      window.addEventListener("click", () => {
+        closeContextMenu();
+        hideSlashPopup();
+        hideWikilinkPopup();
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeContextMenu();
+          hideSlashPopup();
+          hideWikilinkPopup();
+        }
+      });
+    });
+
+    // Helper: Format User Name / Display Name
+    function getUserDisplayName(profile) {
+      if (!profile) return "Unknown";
+      if (profile.displayName && profile.displayName.trim() !== "") {
+        return profile.displayName.trim();
+      }
+      if (profile.email) {
+        return profile.email.split("@")[0];
+      }
+      return "User";
+    }
+
+    // 1. Realtime Auth State
+    function initAuthListener() {
+      auth.onAuthStateChanged(user => {
+        firebaseUser = user;
+        if (user) {
+          db.collection("users").doc(user.uid).onSnapshot(doc => {
+            if (doc.exists) {
+              userProfile = { uid: user.uid, ...doc.data() };
+            } else {
+              userProfile = { uid: user.uid, email: user.email, displayName: "", approved: false, isAdmin: false };
+            }
+            updateUserPresence();
+            renderUI();
+          });
+        } else {
+          userProfile = null;
+          renderUI();
+        }
+      });
+    }
+
+    // 2. Realtime Pages Subscription ('pages' collection)
+    function initPagesRealtimeListener() {
+      db.collection("pages").onSnapshot(snapshot => {
+        itemsList = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          itemsList.push({
+            id: doc.id,
+            title: data.title || "Untitled",
+            content: data.content || "",
+            tags: Array.isArray(data.tags) ? data.tags : (typeof data.tags === 'string' ? parseTagsString(data.tags) : []),
+            type: data.type || "page",
+            parentId: data.parentId || null,
+            order: typeof data.order === "number" ? data.order : 0,
+            updatedAt: data.updatedAt,
+            updatedBy: data.updatedBy || "Unknown"
+          });
         });
 
-        // 1. Realtime Auth State
-        function initAuthListener() {
-            auth.onAuthStateChanged(user => {
-                firebaseUser = user;
-                if (user) {
-                    // Sync user profile from Firestore 'users' collection
-                    db.collection("users").doc(user.uid).onSnapshot(doc => {
-                        if (doc.exists) {
-                            userProfile = { uid: user.uid, ...doc.data() };
-                        } else {
-                            userProfile = { uid: user.uid, email: user.email, approved: false, isAdmin: false };
-                        }
-                        renderUI();
-                    });
-                } else {
-                    userProfile = null;
-                    renderUI();
-                }
+        if (itemsList.length > 0 && !activeItemId) {
+          const firstPage = itemsList.find(i => i.type === 'page') || itemsList[0];
+          activeItemId = firstPage.id;
+        } else if (itemsList.length === 0) {
+          activeItemId = null;
+        }
+
+        renderTree();
+        renderActiveItem();
+      }, err => {
+        console.error("Firestore Pages error:", err);
+      });
+    }
+
+    // Parse tag string like "#npc #quest location" into clean tag array
+    function parseTagsString(str) {
+      if (!str) return [];
+      return str.split(/[\s,]+/)
+        .map(t => t.trim().replace(/^#/, ''))
+        .filter(t => t.length > 0);
+    }
+
+    // 3. Realtime Users Subscription ('users' collection for Admin Panel)
+    function initUsersRealtimeListener() {
+      db.collection("users").onSnapshot(snapshot => {
+        const users = [];
+        snapshot.forEach(doc => {
+          users.push({ uid: doc.id, ...doc.data() });
+        });
+        renderAdminTable(users);
+      }, err => {
+        console.error("Firestore Users error:", err);
+      });
+    }
+
+    // 4. Realtime Presence Subscription
+    function initPresenceRealtimeListener() {
+      db.collection("presence").onSnapshot(snapshot => {
+        const activeNames = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.activeItemId === activeItemId && data.name) {
+            activeNames.push(data.name);
+          }
+        });
+        renderPresenceBadges(activeNames);
+      });
+    }
+
+    function updateUserPresence() {
+      if (!firebaseUser || !userProfile) return;
+      db.collection("presence").doc(firebaseUser.uid).set({
+        name: getUserDisplayName(userProfile),
+        email: firebaseUser.email,
+        activeItemId: activeItemId,
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+
+    function renderPresenceBadges(names) {
+      elPresenceContainer.innerHTML = "";
+      if (!names || names.length === 0) return;
+
+      names.forEach(name => {
+        const badge = document.createElement("span");
+        badge.className = "status-badge";
+        badge.style.backgroundColor = "#e2e8f0";
+        badge.style.borderColor = "#94a3b8";
+        badge.style.color = "#0f172a";
+        badge.title = name;
+        badge.innerText = `[${name}]`;
+        elPresenceContainer.appendChild(badge);
+      });
+    }
+
+    // Main Render Pipeline
+    function renderUI() {
+      if (firebaseUser) {
+        const name = getUserDisplayName(userProfile);
+        elUserDisplay.innerText = name;
+        elAuthBtn.classList.add("hidden");
+        elProfileBtn.classList.remove("hidden");
+        elSignoutBtn.classList.remove("hidden");
+
+        const isApproved = userProfile && userProfile.approved;
+        const isAdmin = userProfile && userProfile.isAdmin;
+
+        if (isApproved) {
+          elApprovalBadge.innerText = isAdmin ? "Admin / Approved" : "Approved";
+          elApprovalBadge.className = "status-badge status-approved";
+          elApprovalBadge.classList.remove("hidden");
+          elPendingBanner.classList.add("hidden");
+          elModeToggleBtn.disabled = false;
+        } else {
+          elApprovalBadge.innerText = "Pending Greenlight";
+          elApprovalBadge.className = "status-badge status-pending";
+          elApprovalBadge.classList.remove("hidden");
+          elPendingBanner.classList.remove("hidden");
+          currentMode = "view"; // Lock to View mode if unapproved
+          elModeToggleBtn.disabled = true;
+          elModeToggleBtn.innerText = "[View Only]";
+        }
+
+        if (isAdmin) {
+          elAdminBtn.classList.remove("hidden");
+        } else {
+          elAdminBtn.classList.add("hidden");
+        }
+      } else {
+        elUserDisplay.innerText = "Not Signed In";
+        elApprovalBadge.classList.add("hidden");
+        elPendingBanner.classList.add("hidden");
+        elAdminBtn.classList.add("hidden");
+        elProfileBtn.classList.add("hidden");
+        elAuthBtn.classList.remove("hidden");
+        elSignoutBtn.classList.add("hidden");
+        currentMode = "view";
+        elModeToggleBtn.disabled = true;
+        elModeToggleBtn.innerText = "[View Only]";
+      }
+
+      const canEdit = userProfile && userProfile.approved;
+      elNewPageBtn.disabled = !canEdit;
+      elNewFolderBtn.disabled = !canEdit;
+
+      if (canEdit && elModeToggleBtn.disabled === false) {
+        elModeToggleBtn.innerText = currentMode === "edit" ? "[Mode: Edit]" : "[Mode: View]";
+      }
+
+      renderTree();
+      renderActiveItem();
+    }
+
+    // View / Edit Mode Switch
+    function toggleViewMode() {
+      if (!userProfile || !userProfile.approved) return;
+      currentMode = currentMode === "edit" ? "view" : "edit";
+      elModeToggleBtn.innerText = currentMode === "edit" ? "[Mode: Edit]" : "[Mode: View]";
+      renderActiveItem();
+    }
+
+    // TREE VIEW BUILDER WITH TAG SEARCH SUPPORT
+    function renderTree() {
+      elTreeContainer.innerHTML = "";
+      if (itemsList.length === 0) {
+        elTreeContainer.innerHTML = `<div style="padding: 12px; font-size: 12px; color: #888; text-align: center;">No items yet.</div>`;
+        return;
+      }
+
+      let filteredItems = itemsList;
+      const q = searchQuery.trim().toLowerCase();
+
+      if (q !== "") {
+        if (q.startsWith("#")) {
+          const tagTerm = q.slice(1);
+          filteredItems = itemsList.filter(i => {
+            const hasTag = (i.tags || []).some(t => t.toLowerCase().includes(tagTerm));
+            const hasContentTag = (i.content || "").toLowerCase().includes("#" + tagTerm);
+            return hasTag || hasContentTag;
+          });
+        } else {
+          filteredItems = itemsList.filter(i => 
+            i.title.toLowerCase().includes(q) || 
+            i.content.toLowerCase().includes(q) ||
+            (i.tags || []).some(t => t.toLowerCase().includes(q))
+          );
+        }
+      }
+
+      const rootItems = filteredItems
+        .filter(i => q !== "" ? true : i.parentId === null)
+        .sort((a, b) => a.order - b.order);
+
+      if (rootItems.length === 0) {
+        elTreeContainer.innerHTML = `<div style="padding: 12px; font-size: 12px; color: #888; text-align: center;">No matching items.</div>`;
+        return;
+      }
+
+      rootItems.forEach(item => {
+        elTreeContainer.appendChild(createTreeNodeElement(item, 0));
+      });
+    }
+
+    function createTreeNodeElement(item, depth) {
+      const children = itemsList
+        .filter(i => i.parentId === item.id)
+        .sort((a, b) => a.order - b.order);
+
+      const hasChildren = children.length > 0;
+      const isExpanded = expandedNodeIds.has(item.id) || searchQuery.trim() !== "";
+      const isFolder = item.type === "folder";
+      const isActive = item.id === activeItemId;
+      const canEdit = userProfile && userProfile.approved;
+
+      const nodeContainer = document.createElement("div");
+      nodeContainer.className = "tree-node";
+
+      const row = document.createElement("div");
+      row.className = `tree-row ${isActive ? 'active' : ''}`;
+      row.style.paddingLeft = `${depth * 14 + 8}px`;
+      row.dataset.id = item.id;
+      
+      if (canEdit) {
+        row.draggable = true;
+        row.ondragstart = (e) => handleDragStart(e, item.id);
+        row.ondragover = (e) => handleDragOver(e, item.id);
+        row.ondragleave = (e) => handleDragLeave(e, item.id);
+        row.ondrop = (e) => handleDrop(e, item.id);
+        row.ondragend = handleDragEnd;
+      }
+
+      // Right-Click Context Menu Trigger
+      row.oncontextmenu = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openContextMenu(e, item.id);
+      };
+
+      row.onclick = (e) => {
+        e.stopPropagation();
+        activeItemId = item.id;
+        updateUserPresence();
+        if (hasChildren || isFolder) {
+          if (expandedNodeIds.has(item.id)) expandedNodeIds.delete(item.id);
+          else expandedNodeIds.add(item.id);
+        }
+        renderTree();
+        renderActiveItem();
+      };
+
+      // Expand/Collapse Chevron (text-based)
+      const chevron = document.createElement("span");
+      chevron.className = "tree-chevron";
+      if (hasChildren || isFolder) {
+        chevron.innerText = isExpanded ? "v" : ">";
+        chevron.onclick = (e) => {
+          e.stopPropagation();
+          if (expandedNodeIds.has(item.id)) expandedNodeIds.delete(item.id);
+          else expandedNodeIds.add(item.id);
+          renderTree();
+        };
+      } else {
+        chevron.style.visibility = "hidden";
+      }
+
+      // Icon (Clean Minimalist Text Indicator)
+      const icon = document.createElement("span");
+      icon.className = "tree-icon";
+      icon.innerText = isFolder ? "[f]" : "[p]";
+
+      row.appendChild(chevron);
+      row.appendChild(icon);
+
+      // Title or Inline Input for Renaming
+      if (inlineEditingItemId === item.id) {
+        const inlineInput = document.createElement("input");
+        inlineInput.type = "text";
+        inlineInput.className = "inline-rename-input";
+        inlineInput.value = item.title || "";
+        
+        let isSaved = false;
+        const commitSave = async () => {
+          if (isSaved) return;
+          isSaved = true;
+          await saveInlineRename(item.id, inlineInput.value);
+        };
+
+        inlineInput.onkeydown = (e) => {
+          e.stopPropagation();
+          if (e.key === "Enter") {
+            commitSave();
+          } else if (e.key === "Escape") {
+            isSaved = true;
+            cancelInlineRename();
+          }
+        };
+
+        inlineInput.onblur = () => {
+          commitSave();
+        };
+
+        inlineInput.onclick = (e) => e.stopPropagation();
+
+        row.appendChild(inlineInput);
+
+        setTimeout(() => {
+          inlineInput.focus();
+          inlineInput.select();
+        }, 10);
+      } else {
+        const title = document.createElement("span");
+        title.className = "tree-title";
+        title.innerText = item.title || "Untitled";
+        row.appendChild(title);
+      }
+
+      nodeContainer.appendChild(row);
+
+      // Render Children Sub-tree
+      if (hasChildren && searchQuery.trim() === "") {
+        const childrenContainer = document.createElement("div");
+        childrenContainer.className = `tree-children ${isExpanded ? '' : 'collapsed'}`;
+        children.forEach(child => {
+          childrenContainer.appendChild(createTreeNodeElement(child, depth + 1));
+        });
+        nodeContainer.appendChild(childrenContainer);
+      }
+
+      return nodeContainer;
+    }
+
+    // Context Menu Handlers
+    function openContextMenu(e, id) {
+      if (!userProfile || !userProfile.approved) return;
+      contextTargetId = id;
+      elContextMenu.style.left = `${e.clientX}px`;
+      elContextMenu.style.top = `${e.clientY}px`;
+      elContextMenu.classList.remove("hidden");
+    }
+
+    function closeContextMenu() {
+      elContextMenu.classList.add("hidden");
+      contextTargetId = null;
+    }
+
+    async function handleContextAction(action) {
+      const targetId = contextTargetId;
+      closeContextMenu();
+      if (!targetId || !userProfile || !userProfile.approved) return;
+
+      const item = itemsList.find(i => i.id === targetId);
+      if (!item) return;
+
+      if (action === "rename") {
+        inlineEditingItemId = targetId;
+        renderTree();
+      } else if (action === "delete") {
+        deleteItemById(targetId);
+      } else if (action === "subpage") {
+        createNewItem('page', targetId);
+      } else if (action === "subfolder") {
+        createNewItem('folder', targetId);
+      }
+    }
+
+    async function saveInlineRename(id, newTitle) {
+      inlineEditingItemId = null;
+      const trimmed = newTitle.trim();
+      if (trimmed !== "") {
+        try {
+          await db.collection("pages").doc(id).update({
+            title: trimmed,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: getUserDisplayName(userProfile)
+          });
+          showToast("Renamed successfully");
+        } catch (err) {
+          console.error("Rename error:", err);
+          showToast("Error renaming item");
+        }
+      } else {
+        renderTree();
+      }
+    }
+
+    function cancelInlineRename() {
+      inlineEditingItemId = null;
+      renderTree();
+    }
+
+    // Delete Logic using In-Website Custom Modal
+    function deleteItemById(id) {
+      if (!userProfile || !userProfile.approved) return;
+      const item = itemsList.find(i => i.id === id);
+      if (!item) return;
+
+      itemToDeleteId = id;
+      const children = itemsList.filter(i => i.parentId === id);
+      
+      const msgEl = document.getElementById("delete-modal-msg");
+      if (children.length > 0) {
+        msgEl.innerHTML = `Are you sure you want to delete <strong>"${escapeHtml(item.title || 'Untitled')}"</strong>?<br><br><span style="color: #c53030;">Warning:</span> This item contains ${children.length} sub-item(s). Deleting this item will move its children to Root level.`;
+      } else {
+        msgEl.innerHTML = `Are you sure you want to delete <strong>"${escapeHtml(item.title || 'Untitled')}"</strong>? This action cannot be undone.`;
+      }
+
+      toggleDeleteModal(true);
+    }
+
+    function toggleDeleteModal(show) {
+      const modal = document.getElementById("delete-modal");
+      if (show) {
+        modal.classList.remove("hidden");
+      } else {
+        modal.classList.add("hidden");
+        itemToDeleteId = null;
+      }
+    }
+
+    async function confirmDeleteItem() {
+      if (!itemToDeleteId || !userProfile || !userProfile.approved) return;
+      const id = itemToDeleteId;
+      const item = itemsList.find(i => i.id === id);
+      if (!item) {
+        toggleDeleteModal(false);
+        return;
+      }
+
+      const children = itemsList.filter(i => i.parentId === id);
+
+      try {
+        if (children.length > 0) {
+          const batch = db.batch();
+          children.forEach(child => {
+            batch.update(db.collection("pages").doc(child.id), { parentId: null });
+          });
+          batch.delete(db.collection("pages").doc(id));
+          await batch.commit();
+        } else {
+          await db.collection("pages").doc(id).delete();
+        }
+
+        if (activeItemId === id) activeItemId = null;
+        showToast("Item deleted");
+      } catch (err) {
+        console.error("Delete error:", err);
+        showToast("Error deleting item");
+      } finally {
+        toggleDeleteModal(false);
+      }
+    }
+
+    function escapeHtml(str) {
+      return (str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    // Drag and Drop Logic
+    function handleDragStart(e, id) {
+      draggedItemId = id;
+      e.dataTransfer.setData("text/plain", id);
+      e.dataTransfer.effectAllowed = "move";
+    }
+
+    function handleDragOver(e, id) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (draggedItemId === id || isDescendant(draggedItemId, id)) return;
+
+      dragOverTargetId = id;
+      const targetRow = e.currentTarget;
+      const rect = targetRow.getBoundingClientRect();
+      const offsetY = e.clientY - rect.top;
+      const height = rect.height;
+
+      targetRow.classList.remove("drag-over-inside", "drag-over-above", "drag-over-below");
+
+      if (offsetY < height * 0.25) {
+        dragPosition = "above";
+        targetRow.classList.add("drag-over-above");
+      } else if (offsetY > height * 0.75) {
+        dragPosition = "below";
+        targetRow.classList.add("drag-over-below");
+      } else {
+        dragPosition = "inside";
+        targetRow.classList.add("drag-over-inside");
+      }
+    }
+
+    function handleDragLeave(e, id) {
+      e.preventDefault();
+      const targetRow = e.currentTarget;
+      targetRow.classList.remove("drag-over-inside", "drag-over-above", "drag-over-below");
+    }
+
+    async function handleDrop(e, targetId) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (!draggedItemId || draggedItemId === targetId) {
+        handleDragEnd();
+        return;
+      }
+
+      if (isDescendant(draggedItemId, targetId)) {
+        showToast("Cannot move an item inside its own sub-item.");
+        handleDragEnd();
+        return;
+      }
+
+      const draggedItem = itemsList.find(i => i.id === draggedItemId);
+      const targetItem = itemsList.find(i => i.id === targetId);
+
+      if (!draggedItem || !targetItem) {
+        handleDragEnd();
+        return;
+      }
+
+      let newParentId = null;
+      let newOrder = 0;
+
+      if (dragPosition === "inside") {
+        newParentId = targetId;
+        const children = itemsList.filter(i => i.parentId === targetId);
+        newOrder = children.length > 0 ? Math.max(...children.map(c => c.order)) + 1 : 0;
+        expandedNodeIds.add(targetId);
+      } else {
+        newParentId = targetItem.parentId;
+        const siblings = itemsList
+          .filter(i => i.parentId === newParentId && i.id !== draggedItemId)
+          .sort((a, b) => a.order - b.order);
+
+        const targetIdx = siblings.findIndex(s => s.id === targetId);
+        const insertIdx = dragPosition === "above" ? targetIdx : targetIdx + 1;
+
+        siblings.splice(insertIdx, 0, draggedItem);
+
+        try {
+          const batch = db.batch();
+          siblings.forEach((sib, index) => {
+            batch.update(db.collection("pages").doc(sib.id), {
+              order: index,
+              parentId: newParentId
             });
+          });
+          await batch.commit();
+          showToast(`Moved "${draggedItem.title}"`);
+        } catch (err) {
+          console.error("Reorder batch error:", err);
+          showToast("Error updating order");
         }
+        handleDragEnd();
+        return;
+      }
 
-        // 2. Realtime Pages Subscription ('pages' collection)
-        function initPagesRealtimeListener() {
-            db.collection("pages").onSnapshot(snapshot => {
-                pagesList = [];
-                snapshot.forEach(doc => {
-                    pagesList.push({ id: doc.id, ...doc.data() });
-                });
+      try {
+        await db.collection("pages").doc(draggedItemId).update({
+          parentId: newParentId,
+          order: newOrder
+        });
+        showToast(`Moved "${draggedItem.title}"`);
+      } catch (err) {
+        console.error("Drop update error:", err);
+        showToast("Error updating item position");
+      }
 
-                // Set initial active page if none selected
-                if (pagesList.length > 0 && !activePageId) {
-                    activePageId = pagesList[0].id;
-                } else if (pagesList.length === 0) {
-                    activePageId = null;
-                }
+      handleDragEnd();
+    }
 
-                renderPagesList();
-                renderActivePage();
-            }, err => {
-                console.error("Firestore Pages error:", err);
-            });
+    function handleRootDragOver(e) {
+      e.preventDefault();
+      dragPosition = "root";
+    }
+
+    async function handleRootDrop(e) {
+      e.preventDefault();
+      if (!draggedItemId) return;
+
+      const draggedItem = itemsList.find(i => i.id === draggedItemId);
+      if (draggedItem && draggedItem.parentId !== null) {
+        const rootItems = itemsList.filter(i => i.parentId === null);
+        const maxOrder = rootItems.length > 0 ? Math.max(...rootItems.map(r => r.order)) + 1 : 0;
+
+        await db.collection("pages").doc(draggedItemId).update({
+          parentId: null,
+          order: maxOrder
+        });
+        showToast(`Moved "${draggedItem.title}" to Root level`);
+      }
+      handleDragEnd();
+    }
+
+    function handleDragEnd() {
+      draggedItemId = null;
+      dragOverTargetId = null;
+      dragPosition = null;
+      document.querySelectorAll(".tree-row").forEach(el => {
+        el.classList.remove("drag-over-inside", "drag-over-above", "drag-over-below");
+      });
+    }
+
+    function isDescendant(parentId, childId) {
+      let current = itemsList.find(i => i.id === childId);
+      while (current && current.parentId) {
+        if (current.parentId === parentId) return true;
+        current = itemsList.find(i => i.id === current.parentId);
+      }
+      return false;
+    }
+
+    // EDITOR AREA, RENDERER & BREADCRUMBS
+    function renderActiveItem() {
+      if (itemsList.length === 0 || !activeItemId) {
+        elMainEditor.classList.add("hidden");
+        elEmptyWorkspace.classList.remove("hidden");
+        return;
+      }
+
+      elMainEditor.classList.remove("hidden");
+      elEmptyWorkspace.classList.add("hidden");
+
+      const item = itemsList.find(i => i.id === activeItemId);
+      if (!item) return;
+
+      renderBreadcrumbs(item);
+
+      if (document.activeElement !== elItemTitle) {
+        elItemTitle.value = item.title || "";
+      }
+
+      const tagsArray = item.tags || [];
+      if (document.activeElement !== elItemTags) {
+        elItemTags.value = tagsArray.map(t => `#${t}`).join(" ");
+      }
+
+      const isFolder = item.type === "folder";
+      elEditorTypeBadge.innerText = isFolder ? "Folder" : "Page";
+      elEditorAuthor.innerText = `Author: ${item.updatedBy || 'Unknown'}`;
+
+      const canEdit = userProfile && userProfile.approved;
+      elItemTitle.disabled = !canEdit || currentMode === "view";
+      elItemTags.disabled = !canEdit || currentMode === "view";
+
+      updateStatsBar(item.content || "");
+
+      if (isFolder) {
+        elItemContent.classList.add("hidden");
+        elRenderedView.classList.add("hidden");
+      } else {
+        if (currentMode === "edit" && canEdit) {
+          elItemContent.classList.remove("hidden");
+          elRenderedView.classList.add("hidden");
+          if (document.activeElement !== elItemContent) {
+            elItemContent.value = item.content || "";
+          }
+        } else {
+          elItemContent.classList.add("hidden");
+          elRenderedView.classList.remove("hidden");
+          renderFormattedView(item.content || "", tagsArray);
         }
+      }
 
-        // 3. Realtime Users Subscription ('users' collection for Admin Panel)
-        function initUsersRealtimeListener() {
-            db.collection("users").onSnapshot(snapshot => {
-                const users = [];
-                snapshot.forEach(doc => {
-                    users.push({ uid: doc.id, ...doc.data() });
-                });
-                renderAdminTable(users);
-            }, err => {
-                console.error("Firestore Users error:", err);
-            });
+      elEditorStatus.innerText = canEdit ? (currentMode === "edit" ? "Editing" : "Viewing") : "Read-Only (Pending Greenlight)";
+
+      renderSubitems(item);
+      renderBacklinks(item);
+    }
+
+    function updateStatsBar(content) {
+      const text = content || "";
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      const chars = text.length;
+      const readTime = Math.max(1, Math.ceil(words / 200));
+
+      elStatsBar.innerText = `${words} words • ${chars} chars • ${readTime} min read`;
+    }
+
+    // Render Formatted View mode (Markdown, Tags & Checklists)
+    function renderFormattedView(content, tagsArray) {
+      let html = "";
+
+      // Render Tags Bar at the top of formatted view if tags exist
+      if (tagsArray && tagsArray.length > 0) {
+        html += `<div style="margin-bottom: 12px;">`;
+        tagsArray.forEach(t => {
+          html += `<span class="tag-badge" onclick="filterByTag('${escapeHtmlAttr(t)}')">#${escapeHtml(t)}</span>`;
+        });
+        html += `</div>`;
+      }
+
+      if (!content && (!tagsArray || tagsArray.length === 0)) {
+        elRenderedView.innerHTML = '<em style="color:#888;">(Empty page)</em>';
+        return;
+      }
+
+      const lines = (content || "").split('\n');
+
+      lines.forEach((line, lineIdx) => {
+        let processed = escapeHtml(line);
+
+        // Parse [[Wiki Links]]
+        processed = processed.replace(/\[\[(.*?)\]\]/g, (match, p1) => {
+          const pageTitle = p1.trim();
+          return `<span class="wiki-link" onclick="navigateToPageByTitle('${escapeHtmlAttr(pageTitle)}')">[[${pageTitle}]]</span>`;
+        });
+
+        // Parse Checklists: - [ ] or - [x]
+        if (/^\s*(-|\*|\d+\.)?\s*\[ \]/.test(line)) {
+          const checkText = processed.replace(/^\s*(-|\*|\d+\.)?\s*\[ \]\s*/, '');
+          html += `<div class="checklist-row"><input type="checkbox" onchange="toggleChecklistLine(${lineIdx}, true)" /> <span>${checkText}</span></div>`;
+        } else if (/^\s*(-|\*|\d+\.)?\s*\[x\]/i.test(line)) {
+          const checkText = processed.replace(/^\s*(-|\*|\d+\.)?\s*\[x\]\s*/i, '');
+          html += `<div class="checklist-row checked"><input type="checkbox" checked onchange="toggleChecklistLine(${lineIdx}, false)" /> <del style="color:#888;">${checkText}</del></div>`;
+        } else if (/^#\s+(.*)/.test(line)) {
+          html += `<h1 style="font-size: 18px; font-weight:700; margin: 12px 0 6px 0; border-bottom: 1px solid #eee; padding-bottom: 4px;">${processed.replace(/^#\s+/, '')}</h1>`;
+        } else if (/^##\s+(.*)/.test(line)) {
+          html += `<h2 style="font-size: 15px; font-weight:700; margin: 10px 0 4px 0;">${processed.replace(/^##\s+/, '')}</h2>`;
+        } else if (/^>\s+(.*)/.test(line)) {
+          html += `<blockquote style="border-left: 3px solid #111; padding-left: 8px; color: #555; margin: 6px 0;">${processed.replace(/^>\s+/, '')}</blockquote>`;
+        } else {
+          html += `<div style="min-height: 18px; margin-bottom: 4px;">${processed}</div>`;
         }
+      });
 
-        // Render Interface
-        function renderUI() {
-            // User Profile Controls
-            if (firebaseUser) {
-                elUserDisplay.innerText = firebaseUser.email;
-                elAuthBtn.classList.add("hidden");
-                elSignoutBtn.classList.remove("hidden");
+      elRenderedView.innerHTML = html;
+    }
 
-                const isApproved = userProfile && userProfile.approved;
-                const isAdmin = userProfile && userProfile.isAdmin;
+    function filterByTag(tagName) {
+      document.getElementById("search-input").value = `#${tagName}`;
+      handleSearchInput();
+    }
 
-                if (isApproved) {
-                    elApprovalBadge.innerText = isAdmin ? "Admin / Approved" : "Approved";
-                    elApprovalBadge.className = "status-badge status-approved";
-                    elApprovalBadge.classList.remove("hidden");
-                    elPendingBanner.classList.add("hidden");
-                } else {
-                    elApprovalBadge.innerText = "Pending Admin Greenlight";
-                    elApprovalBadge.className = "status-badge status-pending";
-                    elApprovalBadge.classList.remove("hidden");
-                    elPendingBanner.classList.remove("hidden");
-                }
+    function escapeHtmlAttr(str) {
+      return (str || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+    }
 
-                if (isAdmin) {
-                    elAdminBtn.classList.remove("hidden");
-                } else {
-                    elAdminBtn.classList.add("hidden");
-                }
-            } else {
-                elUserDisplay.innerText = "Not Signed In";
-                elApprovalBadge.classList.add("hidden");
-                elPendingBanner.classList.add("hidden");
-                elAdminBtn.classList.add("hidden");
-                elAuthBtn.classList.remove("hidden");
-                elSignoutBtn.classList.add("hidden");
-            }
+    async function toggleChecklistLine(lineIdx, checkIt) {
+      if (!userProfile || !userProfile.approved || !activeItemId) return;
+      const item = itemsList.find(i => i.id === activeItemId);
+      if (!item) return;
 
-            renderPagesList();
-            renderActivePage();
+      const lines = (item.content || "").split('\n');
+      if (lineIdx < 0 || lineIdx >= lines.length) return;
+
+      if (checkIt) {
+        lines[lineIdx] = lines[lineIdx].replace('[ ]', '[x]');
+      } else {
+        lines[lineIdx] = lines[lineIdx].replace(/\[x\]/i, '[ ]');
+      }
+
+      const updatedContent = lines.join('\n');
+      item.content = updatedContent;
+      elItemContent.value = updatedContent;
+      renderFormattedView(updatedContent, item.tags);
+      updateStatsBar(updatedContent);
+
+      try {
+        await db.collection("pages").doc(activeItemId).update({
+          content: updatedContent,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: getUserDisplayName(userProfile)
+        });
+        showToast("Checklist updated");
+      } catch(err) {
+        console.error("Checklist save error:", err);
+      }
+    }
+
+    function navigateToPageByTitle(pageTitle) {
+      const page = itemsList.find(i => i.title.toLowerCase() === pageTitle.toLowerCase());
+      if (page) {
+        activeItemId = page.id;
+        updateUserPresence();
+        renderTree();
+        renderActiveItem();
+      } else {
+        showToast(`Page "${pageTitle}" not found`);
+      }
+    }
+
+    // Slash Commands and [[WikiLinks]] Autocomplete in Textarea
+    function handleEditorKeyup(e) {
+      if (e.key === "Escape") {
+        hideSlashPopup();
+        hideWikilinkPopup();
+        return;
+      }
+
+      const textarea = elItemContent;
+      const val = textarea.value;
+      const caret = textarea.selectionStart;
+      const textBeforeCaret = val.slice(0, caret);
+
+      // 1. Check for WikiLink trigger [[
+      const wikiMatch = textBeforeCaret.match(/\[\[([^\]\n]*)$/);
+      if (wikiMatch) {
+        const query = wikiMatch[1].toLowerCase();
+        showWikilinkPopup(query);
+        hideSlashPopup();
+        return;
+      } else {
+        hideWikilinkPopup();
+      }
+
+      // 2. Check for Slash Command trigger /
+      const lineBeforeCaret = textBeforeCaret.split('\n').pop();
+      const slashMatch = lineBeforeCaret.match(/(?:^|\s)\/([a-zA-Z0-9]*)$/);
+      if (slashMatch) {
+        const cmdQuery = slashMatch[1].toLowerCase();
+        showSlashPopup(cmdQuery);
+        return;
+      } else {
+        hideSlashPopup();
+      }
+    }
+
+    function showSlashPopup(query) {
+      const matches = SLASH_COMMANDS.filter(c => c.cmd.slice(1).includes(query));
+      if (matches.length === 0) {
+        hideSlashPopup();
+        return;
+      }
+
+      elSlashPopup.innerHTML = "";
+      matches.forEach(m => {
+        const item = document.createElement("div");
+        item.className = "popup-menu-item";
+        item.innerHTML = `<span><strong>${m.cmd}</strong> — ${m.label}</span>`;
+        item.onclick = (e) => {
+          e.stopPropagation();
+          applySlashCommand(m.snippet);
+        };
+        elSlashPopup.appendChild(item);
+      });
+
+      elSlashPopup.style.left = `20px`;
+      elSlashPopup.style.top = `60px`;
+      elSlashPopup.classList.remove("hidden");
+    }
+
+    function hideSlashPopup() {
+      elSlashPopup.classList.add("hidden");
+    }
+
+    function applySlashCommand(snippet) {
+      const textarea = elItemContent;
+      const val = textarea.value;
+      const caret = textarea.selectionStart;
+      const textBefore = val.slice(0, caret);
+      const textAfter = val.slice(caret);
+
+      const newTextBefore = textBefore.replace(/(?:^|\s)\/([a-zA-Z0-9]*)$/, snippet);
+      textarea.value = newTextBefore + textAfter;
+      textarea.selectionStart = textarea.selectionEnd = newTextBefore.length;
+      textarea.focus();
+
+      hideSlashPopup();
+      handleEditorInput();
+    }
+
+    function showWikilinkPopup(query) {
+      const pages = itemsList.filter(i => i.type === 'page' && i.title.toLowerCase().includes(query));
+      if (pages.length === 0) {
+        hideWikilinkPopup();
+        return;
+      }
+
+      elWikilinkPopup.innerHTML = "";
+      pages.forEach(p => {
+        const item = document.createElement("div");
+        item.className = "popup-menu-item";
+        item.innerHTML = `<span>[p] ${escapeHtml(p.title)}</span>`;
+        item.onclick = (e) => {
+          e.stopPropagation();
+          applyWikilink(p.title);
+        };
+        elWikilinkPopup.appendChild(item);
+      });
+
+      elWikilinkPopup.style.left = `20px`;
+      elWikilinkPopup.style.top = `60px`;
+      elWikilinkPopup.classList.remove("hidden");
+    }
+
+    function hideWikilinkPopup() {
+      elWikilinkPopup.classList.add("hidden");
+    }
+
+    function applyWikilink(pageTitle) {
+      const textarea = elItemContent;
+      const val = textarea.value;
+      const caret = textarea.selectionStart;
+      const textBefore = val.slice(0, caret);
+      const textAfter = val.slice(caret);
+
+      const newTextBefore = textBefore.replace(/\[\[([^\]\n]*)$/, `[[${pageTitle}]]`);
+      textarea.value = newTextBefore + textAfter;
+      textarea.selectionStart = textarea.selectionEnd = newTextBefore.length;
+      textarea.focus();
+
+      hideWikilinkPopup();
+      handleEditorInput();
+    }
+
+    function renderBreadcrumbs(item) {
+      elBreadcrumbs.innerHTML = "";
+      const path = [];
+      let curr = item;
+
+      while (curr) {
+        path.unshift(curr);
+        curr = itemsList.find(i => i.id === curr.parentId);
+      }
+
+      const rootSpan = document.createElement("span");
+      rootSpan.className = "breadcrumb-item";
+      rootSpan.innerText = "Vault Root";
+      rootSpan.onclick = () => {
+        activeItemId = path[0].id;
+        updateUserPresence();
+        renderTree();
+        renderActiveItem();
+      };
+      elBreadcrumbs.appendChild(rootSpan);
+
+      path.forEach(p => {
+        const sep = document.createElement("span");
+        sep.innerText = " > ";
+        sep.style.color = "#ccc";
+        elBreadcrumbs.appendChild(sep);
+
+        const span = document.createElement("span");
+        span.className = "breadcrumb-item";
+        span.innerText = p.title || "Untitled";
+        span.onclick = () => {
+          activeItemId = p.id;
+          updateUserPresence();
+          renderTree();
+          renderActiveItem();
+        };
+        elBreadcrumbs.appendChild(span);
+      });
+    }
+
+    function renderSubitems(parentItem) {
+      const children = itemsList
+        .filter(i => i.parentId === parentItem.id)
+        .sort((a, b) => a.order - b.order);
+
+      if (children.length === 0) {
+        elSubitemsSection.classList.add("hidden");
+        return;
+      }
+
+      elSubitemsSection.classList.remove("hidden");
+      elSubitemsTitle.innerText = parentItem.type === "folder" ? "Folder Contents" : "Sub-Pages & Nested Items";
+      elSubitemsGrid.innerHTML = "";
+
+      children.forEach(child => {
+        const card = document.createElement("div");
+        card.className = "subitem-card";
+        card.innerHTML = `
+          <span>${child.type === 'folder' ? '[f]' : '[p]'}</span>
+          <span style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(child.title || 'Untitled')}</span>
+        `;
+        card.onclick = () => {
+          activeItemId = child.id;
+          updateUserPresence();
+          expandedNodeIds.add(parentItem.id);
+          renderTree();
+          renderActiveItem();
+        };
+        elSubitemsGrid.appendChild(card);
+      });
+    }
+
+    function renderBacklinks(currentItem) {
+      if (!currentItem || currentItem.type !== 'page') {
+        elBacklinksSection.classList.add("hidden");
+        return;
+      }
+
+      const title = (currentItem.title || "").trim();
+      if (!title) {
+        elBacklinksSection.classList.add("hidden");
+        return;
+      }
+
+      const backlinks = itemsList.filter(item => {
+        if (item.id === currentItem.id) return false;
+        const content = item.content || "";
+        return content.toLowerCase().includes(`[[${title.toLowerCase()}]]`) || 
+               content.toLowerCase().includes(title.toLowerCase());
+      });
+
+      if (backlinks.length === 0) {
+        elBacklinksSection.classList.add("hidden");
+        return;
+      }
+
+      elBacklinksSection.classList.remove("hidden");
+      elBacklinksGrid.innerHTML = "";
+
+      backlinks.forEach(bl => {
+        const card = document.createElement("div");
+        card.className = "subitem-card";
+        card.innerHTML = `
+          <span>[p]</span>
+          <span style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(bl.title)}</span>
+        `;
+        card.onclick = () => {
+          activeItemId = bl.id;
+          updateUserPresence();
+          renderTree();
+          renderActiveItem();
+        };
+        elBacklinksGrid.appendChild(card);
+      });
+    }
+
+    // Auto-Save Handler to Firestore
+    function handleEditorInput() {
+      const canEdit = userProfile && userProfile.approved;
+      if (!canEdit || !activeItemId || currentMode === "view") return;
+
+      const newContent = elItemContent.value;
+      const rawTags = parseTagsString(elItemTags.value);
+
+      updateStatsBar(newContent);
+      elEditorStatus.innerText = "Saving...";
+      clearTimeout(saveTimeout);
+
+      saveTimeout = setTimeout(async () => {
+        try {
+          const item = itemsList.find(i => i.id === activeItemId);
+          await db.collection("pages").doc(activeItemId).update({
+            title: elItemTitle.value,
+            tags: rawTags,
+            content: item.type === "folder" ? "" : newContent,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: getUserDisplayName(userProfile)
+          });
+          elEditorStatus.innerText = "Saved";
+        } catch (err) {
+          console.error("Save error:", err);
+          elEditorStatus.innerText = "Save failed";
         }
+      }, 400);
+    }
 
-        function renderPagesList() {
-            elPagesList.innerHTML = "";
-            pagesList.forEach(p => {
-                const li = document.createElement("li");
-                li.className = `page-item ${p.id === activePageId ? 'active' : ''}`;
-                li.innerText = p.title || "Untitled Page";
-                li.onclick = () => {
-                    activePageId = p.id;
-                    renderPagesList();
-                    renderActivePage();
-                };
-                elPagesList.appendChild(li);
-            });
+    // Item Creation Actions
+    async function createNewItem(type = 'page', targetParentId = null) {
+      if (!userProfile || !userProfile.approved) {
+        showToast("Cannot create: Account pending approval.");
+        return;
+      }
 
-            const canEdit = userProfile && userProfile.approved;
-            elNewPageBtn.disabled = !canEdit;
-            elDeletePageBtn.disabled = !canEdit;
+      const parentId = targetParentId !== null ? targetParentId : (activeItemId ? activeItemId : null);
+      const siblings = itemsList.filter(i => i.parentId === parentId);
+      const nextOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.order)) + 1 : 0;
+
+      try {
+        const docRef = await db.collection("pages").add({
+          title: type === 'folder' ? "New Folder" : "Untitled Page",
+          content: "",
+          tags: [],
+          type: type,
+          parentId: parentId,
+          order: nextOrder,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: getUserDisplayName(userProfile)
+        });
+
+        if (parentId) expandedNodeIds.add(parentId);
+        activeItemId = docRef.id;
+        updateUserPresence();
+        showToast(`Created new ${type}`);
+      } catch (err) {
+        console.error("Create item error:", err);
+        showToast("Error creating item");
+      }
+    }
+
+    function toggleCollapseAll() {
+      expandedNodeIds.clear();
+      renderTree();
+    }
+
+    function handleSearchInput() {
+      searchQuery = document.getElementById("search-input").value;
+      renderTree();
+    }
+
+    // AUTHENTICATION & PROFILE MODAL
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      elAuthError.classList.add("hidden");
+
+      const email = elAuthEmail.value.trim();
+      const password = elAuthPassword.value;
+      const username = elAuthUsername.value.trim();
+
+      try {
+        if (isRegisterMode) {
+          const usersSnap = await db.collection("users").get();
+          const isFirstUser = usersSnap.empty;
+
+          const cred = await auth.createUserWithEmailAndPassword(email, password);
+          
+          await db.collection("users").doc(cred.user.uid).set({
+            email: email,
+            displayName: username || email.split("@")[0],
+            approved: isFirstUser ? true : false,
+            isAdmin: isFirstUser ? true : false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          if (isFirstUser) {
+            showToast("Registered! First account detected - Granted ADMIN privileges.");
+          } else {
+            showToast("Registered! Account is pending admin greenlight.");
+          }
+        } else {
+          await auth.signInWithEmailAndPassword(email, password);
+          showToast("Signed in successfully");
         }
+        toggleAuthModal(false);
+      } catch (err) {
+        console.error("Auth error:", err);
+        elAuthError.innerText = err.message || "Authentication failed";
+        elAuthError.classList.remove("hidden");
+      }
+    }
 
-        function renderActivePage() {
-            if (pagesList.length === 0 || !activePageId) {
-                elMainEditor.classList.add("hidden");
-                elEmptyWorkspace.classList.remove("hidden");
-                return;
-            }
+    function handleSignOut() {
+      auth.signOut();
+      showToast("Signed out");
+    }
 
-            elMainEditor.classList.remove("hidden");
-            elEmptyWorkspace.classList.add("hidden");
+    function toggleAuthModal(show) {
+      if (show) {
+        elAuthModal.classList.remove("hidden");
+        elAuthError.classList.add("hidden");
+      } else {
+        elAuthModal.classList.add("hidden");
+      }
+    }
 
-            const page = pagesList.find(p => p.id === activePageId);
-            if (!page) return;
+    function toggleAuthMode() {
+      isRegisterMode = !isRegisterMode;
+      if (isRegisterMode) {
+        elAuthModalTitle.innerText = "Register Account";
+        elUsernameGroup.classList.remove("hidden");
+        elAuthSubmitBtn.innerText = "Register";
+        elAuthToggleBtn.innerText = "Switch to Sign In";
+      } else {
+        elAuthModalTitle.innerText = "Sign In";
+        elUsernameGroup.classList.add("hidden");
+        elAuthSubmitBtn.innerText = "Sign In";
+        elAuthToggleBtn.innerText = "Switch to Register";
+      }
+    }
 
-            // Only update values if element is not currently focused by user
-            if (document.activeElement !== elPageTitle) {
-                elPageTitle.value = page.title || "";
-            }
-            if (document.activeElement !== elPageContent) {
-                elPageContent.value = page.content || "";
-            }
-
-            elEditorAuthor.innerText = `Author: ${page.updatedBy || 'Unknown'}`;
-
-            const canEdit = userProfile && userProfile.approved;
-            elPageTitle.disabled = !canEdit;
-            elPageContent.disabled = !canEdit;
-
-            if (!canEdit) {
-                elEditorStatus.innerText = "Read-Only (Pending Admin Approval)";
-            } else {
-                elEditorStatus.innerText = "Saved";
-            }
+    function toggleProfileModal(show) {
+      if (show) {
+        if (userProfile) {
+          elProfileUsername.value = getUserDisplayName(userProfile);
         }
+        elProfileModal.classList.remove("hidden");
+      } else {
+        elProfileModal.classList.add("hidden");
+      }
+    }
 
-        // Auto-Save Handler to Firestore
-        function handleEditorInput() {
-            const canEdit = userProfile && userProfile.approved;
-            if (!canEdit || !activePageId) return;
+    async function handleProfileSubmit(e) {
+      e.preventDefault();
+      if (!firebaseUser) return;
 
-            elEditorStatus.innerText = "Saving...";
-            clearTimeout(saveTimeout);
+      const newName = elProfileUsername.value.trim();
+      if (!newName) return;
 
-            saveTimeout = setTimeout(async () => {
-                try {
-                    await db.collection("pages").doc(activePageId).update({
-                        title: elPageTitle.value,
-                        content: elPageContent.value,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        updatedBy: userProfile.email
-                    });
-                    elEditorStatus.innerText = "Saved";
-                } catch (err) {
-                    console.error("Save error:", err);
-                    elEditorStatus.innerText = "Save failed";
-                }
-            }, 400);
-        }
+      try {
+        await db.collection("users").doc(firebaseUser.uid).update({
+          displayName: newName
+        });
+        showToast("Profile updated");
+        toggleProfileModal(false);
+        updateUserPresence();
+      } catch (err) {
+        console.error("Profile update error:", err);
+        showToast("Error updating profile");
+      }
+    }
 
-        // Actions
-        async function createNewPage() {
-            if (!userProfile || !userProfile.approved) {
-                showToast("Cannot create pages: Account pending approval.");
-                return;
-            }
+    function toggleAdminModal(show) {
+      if (show) {
+        elAdminModal.classList.remove("hidden");
+      } else {
+        elAdminModal.classList.add("hidden");
+      }
+    }
 
-            try {
-                const docRef = await db.collection("pages").add({
-                    title: "Untitled Page",
-                    content: "",
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    updatedBy: userProfile.email
-                });
-                activePageId = docRef.id;
-                showToast("New page created");
-            } catch (err) {
-                console.error("Create page error:", err);
-                showToast("Error creating page");
-            }
-        }
+    function renderAdminTable(users) {
+      elAdminUserRows.innerHTML = "";
+      if (!users || users.length === 0) {
+        elAdminUserRows.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#888;">No registered users found.</td></tr>`;
+        return;
+      }
 
-        async function deleteCurrentPage() {
-            if (!userProfile || !userProfile.approved || !activePageId) {
-                showToast("Cannot delete: Permission denied.");
-                return;
-            }
+      users.forEach(u => {
+        const tr = document.createElement("tr");
+        const displayName = u.displayName || u.email.split("@")[0];
 
-            try {
-                await db.collection("pages").doc(activePageId).delete();
-                activePageId = null;
-                showToast("Page deleted");
-            } catch (err) {
-                console.error("Delete page error:", err);
-                showToast("Error deleting page");
-            }
-        }
-
-        // Authentication Handlers
-        async function handleAuthSubmit(e) {
-            e.preventDefault();
-            elAuthError.classList.add("hidden");
-
-            const email = elAuthEmail.value.trim();
-            const password = elAuthPassword.value;
-
-            try {
-                if (isRegisterMode) {
-                    // Check if 'users' collection is empty to AUTO-GRANT FIRST USER ADMIN
-                    const usersSnap = await db.collection("users").get();
-                    const isFirstUser = usersSnap.empty;
-
-                    const cred = await auth.createUserWithEmailAndPassword(email, password);
-
-                    // Save profile to Firestore 'users' collection (ID = user.uid)
-                    await db.collection("users").doc(cred.user.uid).set({
-                        email: email,
-                        approved: isFirstUser ? true : false,
-                        isAdmin: isFirstUser ? true : false,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                    if (isFirstUser) {
-                        showToast("Registered! You are the first user and have been granted ADMIN access.");
-                    } else {
-                        showToast("Registered! Account is pending admin approval.");
-                    }
-                } else {
-                    await auth.signInWithEmailAndPassword(email, password);
-                    showToast("Signed in successfully");
-                }
-                toggleAuthModal(false);
-            } catch (err) {
-                console.error("Auth error:", err);
-                elAuthError.innerText = err.message || "Authentication failed";
-                elAuthError.classList.remove("hidden");
-            }
-        }
-
-        function handleSignOut() {
-            auth.signOut();
-            showToast("Signed out");
-        }
-
-        function toggleAuthModal(show) {
-            if (show) {
-                elAuthModal.classList.remove("hidden");
-                elAuthError.classList.add("hidden");
-            } else {
-                elAuthModal.classList.add("hidden");
-            }
-        }
-
-        function toggleAuthMode() {
-            isRegisterMode = !isRegisterMode;
-            if (isRegisterMode) {
-                elAuthModalTitle.innerText = "Register Account";
-                elAuthSubmitBtn.innerText = "Register";
-                elAuthToggleBtn.innerText = "Switch to Sign In";
-            } else {
-                elAuthModalTitle.innerText = "Sign In";
-                elAuthSubmitBtn.innerText = "Sign In";
-                elAuthToggleBtn.innerText = "Switch to Register";
-            }
-        }
-
-        // Admin Panel Handlers
-        function toggleAdminModal(show) {
-            if (show) {
-                elAdminModal.classList.remove("hidden");
-            } else {
-                elAdminModal.classList.add("hidden");
-            }
-        }
-
-        function renderAdminTable(users) {
-            elAdminUserRows.innerHTML = "";
-            if (!users || users.length === 0) {
-                elAdminUserRows.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#888;">No users registered yet.</td></tr>`;
-                return;
-            }
-
-            users.forEach(u => {
-                const tr = document.createElement("tr");
-
-                tr.innerHTML = `
-          <td>${u.email || u.uid}</td>
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(displayName)}</strong></td>
+          <td>${escapeHtml(u.email || u.uid)}</td>
           <td>${u.isAdmin ? 'Admin' : 'Player'}</td>
           <td>
             <span class="status-badge ${u.approved ? 'status-approved' : 'status-pending'}">
@@ -853,32 +2251,31 @@
           </td>
           <td>
             <button onclick="toggleUserApproval('${u.uid}', ${u.approved})">
-              ${u.approved ? 'Revoke Access' : 'Greenlight / Approve'}
+              ${u.approved ? 'Revoke Access' : 'Approve / Greenlight'}
             </button>
           </td>
         `;
-                elAdminUserRows.appendChild(tr);
-            });
-        }
+        elAdminUserRows.appendChild(tr);
+      });
+    }
 
-        async function toggleUserApproval(uid, currentStatus) {
-            try {
-                await db.collection("users").doc(uid).update({
-                    approved: !currentStatus
-                });
-                showToast("User approval status updated");
-            } catch (err) {
-                console.error("Update approval error:", err);
-                showToast("Failed to update status");
-            }
-        }
+    async function toggleUserApproval(uid, currentStatus) {
+      try {
+        await db.collection("users").doc(uid).update({
+          approved: !currentStatus
+        });
+        showToast("User status updated");
+      } catch (err) {
+        console.error("Update approval error:", err);
+        showToast("Failed to update status");
+      }
+    }
 
-        function showToast(msg) {
-            elToast.innerText = msg;
-            elToast.classList.remove("hidden");
-            setTimeout(() => elToast.classList.add("hidden"), 3000);
-        }
-    </script>
+    function showToast(msg) {
+      elToast.innerText = msg;
+      elToast.classList.remove("hidden");
+      setTimeout(() => elToast.classList.add("hidden"), 3000);
+    }
+  </script>
 </body>
-
 </html>

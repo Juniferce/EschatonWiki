@@ -6,7 +6,7 @@
   <title>Eschaton Wiki</title>
   
   <style>
-    /* Clean monochrome aesthetic */
+    /* Clean, barebones monochrome aesthetic */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -310,10 +310,10 @@
     }
 
     .editor-top {
-      padding: 12px 20px 8px 20px;
+      padding: 10px 20px 8px 20px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
       border-bottom: 1px solid #f0f0f0;
     }
 
@@ -324,6 +324,7 @@
       font-size: 11px;
       color: #666;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      margin-bottom: 2px;
     }
 
     .meta-left {
@@ -338,32 +339,110 @@
       gap: 4px;
     }
 
+    /* Aliases & Tags Pill Rows */
+    .aka-row, .tags-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-height: 22px;
+    }
+
+    .aka-label, .tags-label {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    .chip-container {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .alias-chip, .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background-color: #f8fafc;
+      border: 1px dashed #adadad;
+      color: #475569;
+      line-height: 1.2;
+    }
+
+    .tag-chip {
+      background-color: #f0f0f0;
+      border: 1px solid #d0d0d0;
+      color: #111111;
+      cursor: pointer;
+    }
+
+    .tag-chip:hover {
+      background-color: #e2e8f0;
+      border-color: #111111;
+    }
+
+    .remove-chip-btn {
+      border: none;
+      background: none;
+      color: #888;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 0 2px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .remove-chip-btn:hover {
+      color: #dc2626;
+    }
+
+    .add-chip-btn {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+      padding: 2px 6px;
+      background-color: #ffffff;
+      border: 1px dashed #999;
+      color: #555;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .add-chip-btn:hover {
+      background-color: #f0f0f0;
+      border-color: #111;
+      color: #111;
+    }
+
+    .add-chip-input {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      padding: 2px 6px;
+      width: 120px;
+      border: 1px solid #111;
+      border-radius: 3px;
+      outline: none;
+    }
+
     .title-input {
       font-size: 22px;
       font-weight: 700;
       border: none;
       border-bottom: 1px solid transparent;
       border-radius: 0;
-      padding: 4px 0;
+      padding: 2px 0;
       width: 100%;
     }
 
     .title-input:focus {
       border-bottom-color: #111111;
-    }
-
-    .tags-input, .aliases-input {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 12px;
-      color: #444;
-      border: none;
-      border-bottom: 1px solid transparent;
-      padding: 2px 0;
-      width: 100%;
-    }
-
-    .tags-input:focus, .aliases-input:focus {
-      border-bottom-color: #888888;
     }
 
     .editor-body {
@@ -395,7 +474,7 @@
       outline: none;
     }
 
-    /* Rendered View mode */
+    /* Rendered View Mode */
     .rendered-view {
       flex: 1;
       min-height: 240px;
@@ -404,36 +483,6 @@
       line-height: 1.6;
       color: #111;
       user-select: text;
-    }
-
-    .tag-badge {
-      display: inline-block;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 11px;
-      padding: 1px 6px;
-      background-color: #f0f0f0;
-      border: 1px solid #d0d0d0;
-      border-radius: 3px;
-      color: #333;
-      margin-right: 4px;
-      cursor: pointer;
-    }
-
-    .tag-badge:hover {
-      background-color: #e0e0e0;
-      border-color: #111;
-    }
-
-    .alias-badge {
-      display: inline-block;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 11px;
-      padding: 1px 6px;
-      background-color: #fcfcfc;
-      border: 1px dashed #adadad;
-      border-radius: 3px;
-      color: #555;
-      margin-right: 4px;
     }
 
     .wiki-link {
@@ -737,15 +786,24 @@
           </div>
         </div>
         
+        <!-- Aliases Above Title -->
+        <div id="aka-row" class="aka-row">
+          <span class="aka-label">AKA:</span>
+          <div id="aliases-list" class="chip-container"></div>
+          <button id="add-alias-btn" class="add-chip-btn" onclick="showAddAliasInput()">+ Alias</button>
+          <input type="text" id="add-alias-input" class="add-chip-input hidden" placeholder="Type alias..." onkeydown="handleAliasInputKey(event)" onblur="commitNewAlias()" />
+        </div>
+
+        <!-- Page Title -->
         <input type="text" id="item-title" class="title-input" placeholder="Title..." oninput="handleEditorInput()" />
         
-        <!-- Editable Tags & Aliases Inputs for Edit Mode -->
-        <input type="text" id="item-tags" class="tags-input" placeholder="Add tags (e.g. #npc #location #act1)..." oninput="handleEditorInput()" />
-        <input type="text" id="item-aliases" class="aliases-input" placeholder="Add aliases (e.g. Shadow King, Maelor, Lord of Ash)..." oninput="handleEditorInput()" />
-        
-        <!-- Read-Only View Headers for Tags & Aliases -->
-        <div id="view-tags-container" class="hidden" style="margin-top: 4px;"></div>
-        <div id="view-aliases-container" class="hidden" style="margin-top: 4px;"></div>
+        <!-- Tags Below Title -->
+        <div id="tags-row" class="tags-row">
+          <span class="tags-label">Tags:</span>
+          <div id="tags-list" class="chip-container"></div>
+          <button id="add-tag-btn" class="add-chip-btn" onclick="showAddTagInput()">+ Tag</button>
+          <input type="text" id="add-tag-input" class="add-chip-input hidden" placeholder="Type tag..." onkeydown="handleTagInputKey(event)" onblur="commitNewTag()" />
+        </div>
       </div>
 
       <div class="editor-body">
@@ -796,7 +854,6 @@
       </div>
 
       <form onsubmit="handleAuthSubmit(event)">
-        <!-- Username input hidden by default during Sign In mode -->
         <div class="form-group hidden" id="username-group">
           <label>Display Name / Username</label>
           <input type="text" id="auth-username" placeholder="e.g. your Name, your Username" />
@@ -928,6 +985,8 @@
     let inlineEditingItemId = null;
     let itemToDeleteId = null;
     let currentMode = "edit"; // "edit" or "view"
+    let isCommittingAlias = false;
+    let isCommittingTag = false;
 
     // Available Slash Commands Definition
     const SLASH_COMMANDS = [
@@ -957,10 +1016,6 @@
     const elEmptyWorkspace = document.getElementById("empty-workspace");
     const elBreadcrumbs = document.getElementById("breadcrumbs");
     const elItemTitle = document.getElementById("item-title");
-    const elItemTags = document.getElementById("item-tags");
-    const elItemAliases = document.getElementById("item-aliases");
-    const elViewTagsContainer = document.getElementById("view-tags-container");
-    const elViewAliasesContainer = document.getElementById("view-aliases-container");
 
     const elItemContent = document.getElementById("item-content");
     const elRenderedView = document.getElementById("rendered-view");
@@ -1064,8 +1119,8 @@
             id: doc.id,
             title: data.title || "Untitled",
             content: data.content || "",
-            tags: Array.isArray(data.tags) ? data.tags : (typeof data.tags === 'string' ? parseTagsString(data.tags) : []),
-            aliases: Array.isArray(data.aliases) ? data.aliases : (typeof data.aliases === 'string' ? parseAliasesString(data.aliases) : []),
+            tags: Array.isArray(data.tags) ? data.tags : [],
+            aliases: Array.isArray(data.aliases) ? data.aliases : [],
             type: data.type || "page",
             parentId: data.parentId || null,
             order: typeof data.order === "number" ? data.order : 0,
@@ -1086,21 +1141,6 @@
       }, err => {
         console.error("Firestore Pages error:", err);
       });
-    }
-
-    // Helper functions for tags & aliases
-    function parseTagsString(str) {
-      if (!str) return [];
-      return str.split(/[\s,]+/)
-        .map(t => t.trim().replace(/^#/, ''))
-        .filter(t => t.length > 0);
-    }
-
-    function parseAliasesString(str) {
-      if (!str) return [];
-      return str.split(',')
-        .map(a => a.trim())
-        .filter(a => a.length > 0);
     }
 
     // 3. Realtime Users Subscription ('users' collection)
@@ -1300,7 +1340,7 @@
         openContextMenu(e, item.id);
       };
 
-      // Single Click: Select and Open Document (Does NOT collapse/expand)
+      // Single Click: Select Document (Does NOT toggle expansion)
       row.onclick = (e) => {
         e.stopPropagation();
         activeItemId = item.id;
@@ -1319,7 +1359,7 @@
         }
       };
 
-      // Chevron Click: Toggle Expand/Collapse
+      // Chevron Click: Toggle Expand/Collapse Node
       const chevron = document.createElement("span");
       chevron.className = "tree-chevron";
       if (hasChildren || isFolder) {
@@ -1694,17 +1734,6 @@
         elItemTitle.value = item.title || "";
       }
 
-      const tagsArray = item.tags || [];
-      const aliasesArray = item.aliases || [];
-
-      if (document.activeElement !== elItemTags) {
-        elItemTags.value = tagsArray.map(t => `#${t}`).join(" ");
-      }
-
-      if (document.activeElement !== elItemAliases) {
-        elItemAliases.value = aliasesArray.join(", ");
-      }
-
       const isFolder = item.type === "folder";
       elEditorTypeBadge.innerText = isFolder ? "Folder" : "Page";
       elEditorAuthor.innerText = `Author: ${item.updatedBy || 'Unknown'}`;
@@ -1713,19 +1742,9 @@
       const isEditing = canEdit && currentMode === "edit";
 
       elItemTitle.disabled = !isEditing;
-      
-      if (isEditing) {
-        elItemTags.classList.remove("hidden");
-        elItemAliases.classList.remove("hidden");
-        elViewTagsContainer.classList.add("hidden");
-        elViewAliasesContainer.classList.add("hidden");
-      } else {
-        elItemTags.classList.add("hidden");
-        elItemAliases.classList.add("hidden");
-        
-        // Render Read-Only View Headers for Tags & Aliases
-        renderViewTagsAndAliases(tagsArray, aliasesArray);
-      }
+
+      // Render Aliases & Tags Chips
+      renderChips(item, isEditing);
 
       updateStatsBar(item.content || "");
 
@@ -1752,21 +1771,205 @@
       renderBacklinks(item);
     }
 
-    function renderViewTagsAndAliases(tagsArray, aliasesArray) {
-      if (tagsArray.length > 0) {
-        elViewTagsContainer.innerHTML = `<span style="font-size: 11px; color: #666; font-family: monospace; margin-right: 6px;">Tags:</span>` +
-          tagsArray.map(t => `<span class="tag-badge" onclick="filterByTag('${escapeHtmlAttr(t)}')">#${escapeHtml(t)}</span>`).join("");
-        elViewTagsContainer.classList.remove("hidden");
+    // Render Dynamic Pill Chips for Aliases and Tags
+    function renderChips(item, isEditing) {
+      const akaRow = document.getElementById("aka-row");
+      const aliasesList = document.getElementById("aliases-list");
+      const addAliasBtn = document.getElementById("add-alias-btn");
+      const addAliasInput = document.getElementById("add-alias-input");
+
+      const tagsRow = document.getElementById("tags-row");
+      const tagsList = document.getElementById("tags-list");
+      const addTagBtn = document.getElementById("add-tag-btn");
+      const addTagInput = document.getElementById("add-tag-input");
+
+      const aliases = item.aliases || [];
+      const tags = item.tags || [];
+
+      // Render Aliases (AKA)
+      aliasesList.innerHTML = "";
+      aliases.forEach((alias, idx) => {
+        const chip = document.createElement("span");
+        chip.className = "alias-chip";
+        chip.innerText = alias;
+        if (isEditing) {
+          const rmBtn = document.createElement("button");
+          rmBtn.className = "remove-chip-btn";
+          rmBtn.innerText = "x";
+          rmBtn.onclick = (e) => {
+            e.stopPropagation();
+            removeAlias(item, idx);
+          };
+          chip.appendChild(rmBtn);
+        }
+        aliasesList.appendChild(chip);
+      });
+
+      if (isEditing) {
+        akaRow.classList.remove("hidden");
+        addAliasBtn.classList.remove("hidden");
+        addAliasInput.classList.add("hidden");
       } else {
-        elViewTagsContainer.classList.add("hidden");
+        addAliasBtn.classList.add("hidden");
+        addAliasInput.classList.add("hidden");
+        if (aliases.length === 0) {
+          akaRow.classList.add("hidden");
+        } else {
+          akaRow.classList.remove("hidden");
+        }
       }
 
-      if (aliasesArray.length > 0) {
-        elViewAliasesContainer.innerHTML = `<span style="font-size: 11px; color: #666; font-family: monospace; margin-right: 6px;">Aliases:</span>` +
-          aliasesArray.map(a => `<span class="alias-badge">${escapeHtml(a)}</span>`).join("");
-        elViewAliasesContainer.classList.remove("hidden");
+      // Render Tags
+      tagsList.innerHTML = "";
+      tags.forEach((tag, idx) => {
+        const chip = document.createElement("span");
+        chip.className = "tag-chip";
+        chip.innerText = `#${tag}`;
+        chip.onclick = () => filterByTag(tag);
+        if (isEditing) {
+          const rmBtn = document.createElement("button");
+          rmBtn.className = "remove-chip-btn";
+          rmBtn.innerText = "x";
+          rmBtn.onclick = (e) => {
+            e.stopPropagation();
+            removeTag(item, idx);
+          };
+          chip.appendChild(rmBtn);
+        }
+        tagsList.appendChild(chip);
+      });
+
+      if (isEditing) {
+        tagsRow.classList.remove("hidden");
+        addTagBtn.classList.remove("hidden");
+        addTagInput.classList.add("hidden");
       } else {
-        elViewAliasesContainer.classList.add("hidden");
+        addTagBtn.classList.add("hidden");
+        addTagInput.classList.add("hidden");
+        if (tags.length === 0) {
+          tagsRow.classList.add("hidden");
+        } else {
+          tagsRow.classList.remove("hidden");
+        }
+      }
+    }
+
+    // Alias Management
+    function showAddAliasInput() {
+      const addAliasBtn = document.getElementById("add-alias-btn");
+      const addAliasInput = document.getElementById("add-alias-input");
+      addAliasBtn.classList.add("hidden");
+      addAliasInput.classList.remove("hidden");
+      addAliasInput.value = "";
+      addAliasInput.focus();
+    }
+
+    function handleAliasInputKey(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commitNewAlias();
+      } else if (e.key === "Escape") {
+        const addAliasBtn = document.getElementById("add-alias-btn");
+        const addAliasInput = document.getElementById("add-alias-input");
+        addAliasInput.classList.add("hidden");
+        addAliasBtn.classList.remove("hidden");
+      }
+    }
+
+    async function commitNewAlias() {
+      if (isCommittingAlias) return;
+      isCommittingAlias = true;
+      const addAliasInput = document.getElementById("add-alias-input");
+      const val = addAliasInput.value.trim();
+
+      if (val && activeItemId) {
+        const item = itemsList.find(i => i.id === activeItemId);
+        if (item) {
+          const currentAliases = item.aliases || [];
+          if (!currentAliases.includes(val)) {
+            const updated = [...currentAliases, val];
+            item.aliases = updated;
+            await saveItemMetadata(item.id, { aliases: updated });
+          }
+        }
+      }
+
+      isCommittingAlias = false;
+      const item = itemsList.find(i => i.id === activeItemId);
+      if (item) renderActiveItem();
+    }
+
+    async function removeAlias(item, index) {
+      const updated = [...(item.aliases || [])];
+      updated.splice(index, 1);
+      item.aliases = updated;
+      await saveItemMetadata(item.id, { aliases: updated });
+      renderActiveItem();
+    }
+
+    // Tag Management
+    function showAddTagInput() {
+      const addTagBtn = document.getElementById("add-tag-btn");
+      const addTagInput = document.getElementById("add-tag-input");
+      addTagBtn.classList.add("hidden");
+      addTagInput.classList.remove("hidden");
+      addTagInput.value = "";
+      addTagInput.focus();
+    }
+
+    function handleTagInputKey(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commitNewTag();
+      } else if (e.key === "Escape") {
+        const addTagBtn = document.getElementById("add-tag-btn");
+        const addTagInput = document.getElementById("add-tag-input");
+        addTagInput.classList.add("hidden");
+        addTagBtn.classList.remove("hidden");
+      }
+    }
+
+    async function commitNewTag() {
+      if (isCommittingTag) return;
+      isCommittingTag = true;
+      const addTagInput = document.getElementById("add-tag-input");
+      const val = addTagInput.value.trim().replace(/^#/, '');
+
+      if (val && activeItemId) {
+        const item = itemsList.find(i => i.id === activeItemId);
+        if (item) {
+          const currentTags = item.tags || [];
+          if (!currentTags.includes(val)) {
+            const updated = [...currentTags, val];
+            item.tags = updated;
+            await saveItemMetadata(item.id, { tags: updated });
+          }
+        }
+      }
+
+      isCommittingTag = false;
+      const item = itemsList.find(i => i.id === activeItemId);
+      if (item) renderActiveItem();
+    }
+
+    async function removeTag(item, index) {
+      const updated = [...(item.tags || [])];
+      updated.splice(index, 1);
+      item.tags = updated;
+      await saveItemMetadata(item.id, { tags: updated });
+      renderActiveItem();
+    }
+
+    async function saveItemMetadata(id, updates) {
+      try {
+        await db.collection("pages").doc(id).update({
+          ...updates,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: getUserDisplayName(userProfile)
+        });
+      } catch (err) {
+        console.error("Error saving metadata:", err);
+        showToast("Error updating metadata");
       }
     }
 
@@ -2126,14 +2329,12 @@
       });
     }
 
-    // Auto-Save Handler to Firestore
+    // Auto-Save Title & Text Content Handler to Firestore
     function handleEditorInput() {
       const canEdit = userProfile && userProfile.approved;
       if (!canEdit || !activeItemId || currentMode === "view") return;
 
       const newContent = elItemContent.value;
-      const rawTags = parseTagsString(elItemTags.value);
-      const rawAliases = parseAliasesString(elItemAliases.value);
 
       updateStatsBar(newContent);
       elEditorStatus.innerText = "Saving...";
@@ -2144,8 +2345,6 @@
           const item = itemsList.find(i => i.id === activeItemId);
           await db.collection("pages").doc(activeItemId).update({
             title: elItemTitle.value,
-            tags: rawTags,
-            aliases: rawAliases,
             content: item.type === "folder" ? "" : newContent,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: getUserDisplayName(userProfile)
@@ -2252,7 +2451,7 @@
       if (show) {
         isRegisterMode = false;
         elAuthModalTitle.innerText = "Sign In";
-        elUsernameGroup.classList.add("hidden"); // Ensure username input is hidden for sign in
+        elUsernameGroup.classList.add("hidden");
         elAuthSubmitBtn.innerText = "Sign In";
         elAuthToggleBtn.innerText = "Switch to Register";
         elAuthError.classList.add("hidden");
@@ -2266,12 +2465,12 @@
       isRegisterMode = !isRegisterMode;
       if (isRegisterMode) {
         elAuthModalTitle.innerText = "Register Account";
-        elUsernameGroup.classList.remove("hidden"); // Show username input for registration
+        elUsernameGroup.classList.remove("hidden");
         elAuthSubmitBtn.innerText = "Register";
         elAuthToggleBtn.innerText = "Switch to Sign In";
       } else {
         elAuthModalTitle.innerText = "Sign In";
-        elUsernameGroup.classList.add("hidden"); // Hide username input for sign in
+        elUsernameGroup.classList.add("hidden");
         elAuthSubmitBtn.innerText = "Sign In";
         elAuthToggleBtn.innerText = "Switch to Register";
       }

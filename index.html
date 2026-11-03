@@ -271,6 +271,21 @@
       height: 20px;
     }
 
+    .inline-icon-input {
+      font-family: inherit;
+      font-size: 12px;
+      padding: 0;
+      width: 28px;
+      height: 20px;
+      text-align: center;
+      border: 1px solid #111111;
+      border-radius: 2px;
+      background-color: #ffffff;
+      color: #111111;
+      outline: none;
+      margin-right: 4px;
+    }
+
     .tree-children {
       display: flex;
       flex-direction: column;
@@ -877,114 +892,6 @@
     </div>
   </div>
 
-  <!-- Profile Modal -->
-  <div id="profile-modal" class="modal-overlay hidden">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">User Profile</span>
-        <button onclick="toggleProfileModal(false)">X</button>
-      </div>
-
-      <form onsubmit="handleProfileSubmit(event)">
-        <div class="form-group">
-          <label>Display Name / Username</label>
-          <input type="text" id="profile-username" required placeholder="Enter username..." />
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
-          <button type="button" onclick="toggleProfileModal(false)">Cancel</button>
-          <button type="submit" style="background-color: #111; color: #fff;">Save Changes</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Admin Gatekeeper Modal -->
-  <div id="admin-modal" class="modal-overlay hidden">
-    <div class="modal" style="max-width: 580px;">
-      <div class="modal-header">
-        <span class="modal-title">GM Admin Gatekeeper — User Greenlights</span>
-        <button onclick="toggleAdminModal(false)">X</button>
-      </div>
-
-      <p style="font-size: 12px; color: #666; margin-bottom: 12px;">
-        Newly registered player accounts require an <strong>Approved</strong> greenlight to edit documents or move items.
-      </p>
-
-      <table class="user-table">
-        <thead>
-          <tr>
-            <th>User / Display Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="admin-user-rows"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Delete Confirmation Modal -->
-  <div id="delete-modal" class="modal-overlay hidden">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">Confirm Delete</span>
-        <button onclick="toggleDeleteModal(false)">X</button>
-      </div>
-      <p id="delete-modal-msg" style="font-size: 13px; color: #111; margin-bottom: 16px; line-height: 1.5;"></p>
-      <div style="display: flex; gap: 8px; justify-content: flex-end;">
-        <button onclick="toggleDeleteModal(false)">Cancel</button>
-        <button id="confirm-delete-btn" onclick="confirmDeleteItem()" style="background-color: #c53030; color: #fff; border-color: #c53030;">Delete Item</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Notice -->
-  <div id="toast" class="toast hidden"></div>
-
-  <!-- Right-Click Context Menu -->
-  <div id="context-menu" class="context-menu hidden">
-    <div id="ctx-icon-item" class="context-menu-item" onclick="handleContextAction('icon')">Change Icon</div>
-    <div id="ctx-color-item" class="context-menu-item" onclick="handleContextAction('color')">Change Color</div>
-    <div class="context-menu-item" onclick="handleContextAction('rename')">Rename</div>
-    <div class="context-menu-item" onclick="handleContextAction('subpage')">+ New Sub-page</div>
-    <div class="context-menu-item" onclick="handleContextAction('subfolder')">+ New Sub-folder</div>
-    <div class="context-menu-divider"></div>
-    <div class="context-menu-item danger" onclick="handleContextAction('delete')">Delete</div>
-  </div>
-
-  <!-- Change Page Icon Modal -->
-  <div id="icon-modal" class="modal-overlay hidden">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">Change Page Icon</span>
-        <button onclick="toggleIconModal(false)">X</button>
-      </div>
-
-      <div class="form-group">
-        <label>Display Icon (Single Character or Emoji)</label>
-        <input type="text" id="icon-input" maxlength="2" placeholder="e.g. ⚔️, 📜, 👤, 🏰, p" />
-      </div>
-
-      <div style="font-size: 11px; color: #666; margin-bottom: 8px;">Quick Presets:</div>
-      <div class="preset-row" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
-        <button type="button" class="preset-btn" onclick="setPresetIcon('⚔️')">⚔️</button>
-        <button type="button" class="preset-btn" onclick="setPresetIcon('📜')">📜</button>
-        <button type="button" class="preset-btn" onclick="setPresetIcon('👤')">👤</button>
-        <button type="button" class="preset-btn" onclick="setPresetIcon('🏰')">🏰</button>
-        <button type="button" class="preset-btn" onclick="setPresetIcon('🎲')">🎲</button>
-        <button type="button" class="preset-btn" onclick="setPresetIcon('👑')">👑</button>
-        <button type="button" class="preset-btn" onclick="setPresetIcon('p')">Reset [p]</button>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
-        <button type="button" onclick="toggleIconModal(false)">Cancel</button>
-        <button type="button" onclick="savePageIcon()" style="background-color: #111; color: #fff;">Save Icon</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Change Folder Color Modal -->
   <div id="color-modal" class="modal-overlay hidden">
     <div class="modal">
@@ -1052,6 +959,7 @@
     let contextTargetId = null;
     let modalTargetId = null;
     let inlineEditingItemId = null;
+    let inlineEditingIconItemId = null;
     let itemToDeleteId = null;
     let currentMode = "edit"; // "edit" or "view"
     let isCommittingAlias = false;
@@ -1515,7 +1423,61 @@
       }
 
       row.appendChild(chevron);
-      row.appendChild(icon);
+
+      // Icon (Custom char/emoji with no brackets, colored SVG folder, or inline editable input)
+      if (inlineEditingIconItemId === item.id) {
+        const iconInput = document.createElement("input");
+        iconInput.type = "text";
+        iconInput.className = "inline-icon-input";
+        iconInput.value = item.icon || "p";
+
+        let isSaved = false;
+        const commitIconSave = async () => {
+          if (isSaved) return;
+          isSaved = true;
+          await saveInlineIcon(item.id, iconInput.value);
+        };
+
+        iconInput.onkeydown = (e) => {
+          e.stopPropagation();
+          if (e.key === "Enter") {
+            commitIconSave();
+          } else if (e.key === "Escape") {
+            isSaved = true;
+            cancelInlineIcon();
+          }
+        };
+
+        iconInput.onblur = () => commitIconSave();
+        iconInput.onclick = (e) => e.stopPropagation();
+
+        row.appendChild(iconInput);
+
+        setTimeout(() => {
+          iconInput.focus();
+          iconInput.select();
+        }, 10);
+      } else {
+        const icon = document.createElement("span");
+        icon.className = "tree-icon";
+
+        if (isFolder) {
+          const folderColor = item.color || inheritedColor || "#888888";
+          icon.innerHTML = getFolderIconSvg(folderColor);
+        } else {
+          const customIcon = item.icon && item.icon !== 'p';
+          const displayChar = item.icon || 'p';
+          if (customIcon) {
+            icon.innerText = displayChar;
+          } else {
+            icon.innerText = `[${displayChar}]`;
+          }
+          if (inheritedColor) {
+            icon.style.color = inheritedColor;
+          }
+        }
+        row.appendChild(icon);
+      }
 
       // Inline Input for Renaming or Title Display
       if (inlineEditingItemId === item.id) {
@@ -1611,9 +1573,8 @@
       if (!item) return;
 
       if (action === "icon") {
-        const elIconInput = document.getElementById("icon-input");
-        if (elIconInput) elIconInput.value = item.icon || "p";
-        toggleIconModal(true);
+        inlineEditingIconItemId = targetId;
+        renderTree();
       } else if (action === "color") {
         const elColorInput = document.getElementById("color-input");
         if (elColorInput) elColorInput.value = item.color || "#3b82f6";
@@ -1630,32 +1591,23 @@
       }
     }
 
-    function toggleIconModal(show) {
-      const elIconModal = document.getElementById("icon-modal");
-      if (!elIconModal) return;
-      if (show) elIconModal.classList.remove("hidden");
-      else elIconModal.classList.add("hidden");
-    }
-
-    function setPresetIcon(val) {
-      const elIconInput = document.getElementById("icon-input");
-      if (elIconInput) elIconInput.value = val;
-    }
-
-    async function savePageIcon() {
-      if (!modalTargetId) return;
-      const elIconInput = document.getElementById("icon-input");
-      const newIcon = (elIconInput ? elIconInput.value.trim() : "") || "p";
+    async function saveInlineIcon(id, newIcon) {
+      inlineEditingIconItemId = null;
+      const val = newIcon.trim() || "p";
       try {
-        await db.collection("pages").doc(modalTargetId).update({
-          icon: newIcon
+        await db.collection("pages").doc(id).update({
+          icon: val
         });
         showToast("Icon updated");
-        toggleIconModal(false);
-      } catch(err) {
+      } catch (err) {
         console.error("Save icon error:", err);
-        showToast("Error saving icon");
+        showToast("Error updating icon");
       }
+    }
+
+    function cancelInlineIcon() {
+      inlineEditingIconItemId = null;
+      renderTree();
     }
 
     function toggleColorModal(show) {

@@ -1050,6 +1050,7 @@
     let saveTimeout = null;
     let searchQuery = "";
     let contextTargetId = null;
+    let modalTargetId = null;
     let inlineEditingItemId = null;
     let itemToDeleteId = null;
     let currentMode = "edit"; // "edit" or "view"
@@ -1181,6 +1182,12 @@
         curr = itemsList.find(i => i.id === curr.parentId);
       }
       return null;
+    }
+
+    // Dynamic folder icon SVG that fills with the folder's exact set color
+    function getFolderIconSvg(color) {
+      const folderColor = color || "#888888";
+      return `<svg width="14" height="14" viewBox="0 0 24 24" fill="${folderColor}" style="vertical-align: -2px; display: inline-block;"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
     }
 
     // 1. Realtime Auth State
@@ -1483,17 +1490,28 @@
         chevron.style.visibility = "hidden";
       }
 
-      // Icon (Custom char or emoji inside brackets)
+      // Icon (Custom char/emoji with no brackets, or colored SVG folder)
       const icon = document.createElement("span");
       icon.className = "tree-icon";
-      const displayIconChar = item.icon || (isFolder ? 'f' : 'p');
-      icon.innerText = `[${displayIconChar}]`;
 
-      if (inheritedColor) {
-        icon.style.color = inheritedColor;
-        if (isActive) {
-          row.style.borderLeftColor = inheritedColor;
+      if (isFolder) {
+        const folderColor = item.color || inheritedColor || "#888888";
+        icon.innerHTML = getFolderIconSvg(folderColor);
+      } else {
+        const customIcon = item.icon && item.icon !== 'p';
+        const displayChar = item.icon || 'p';
+        if (customIcon) {
+          icon.innerText = displayChar;
+        } else {
+          icon.innerText = `[${displayChar}]`;
         }
+        if (inheritedColor) {
+          icon.style.color = inheritedColor;
+        }
+      }
+
+      if (inheritedColor && isActive) {
+        row.style.borderLeftColor = inheritedColor;
       }
 
       row.appendChild(chevron);
@@ -1588,6 +1606,7 @@
       closeContextMenu();
       if (!targetId || !userProfile || !userProfile.approved) return;
 
+      modalTargetId = targetId;
       const item = itemsList.find(i => i.id === targetId);
       if (!item) return;
 
@@ -1624,11 +1643,11 @@
     }
 
     async function savePageIcon() {
-      if (!contextTargetId) return;
+      if (!modalTargetId) return;
       const elIconInput = document.getElementById("icon-input");
       const newIcon = (elIconInput ? elIconInput.value.trim() : "") || "p";
       try {
-        await db.collection("pages").doc(contextTargetId).update({
+        await db.collection("pages").doc(modalTargetId).update({
           icon: newIcon
         });
         showToast("Icon updated");
@@ -1657,11 +1676,11 @@
     }
 
     async function saveFolderColor(overrideHex = undefined) {
-      if (!contextTargetId) return;
+      if (!modalTargetId) return;
       const elColorInput = document.getElementById("color-input");
       const newColor = overrideHex !== undefined ? overrideHex : (elColorInput ? elColorInput.value : null);
       try {
-        await db.collection("pages").doc(contextTargetId).update({
+        await db.collection("pages").doc(modalTargetId).update({
           color: newColor
         });
         showToast("Folder color updated");
@@ -2476,8 +2495,18 @@
       children.forEach(child => {
         const card = document.createElement("div");
         card.className = "subitem-card";
+        const childIsFolder = child.type === "folder";
+        let iconHtml = "";
+        if (childIsFolder) {
+          const folderColor = child.color || getItemColor(child) || "#888888";
+          iconHtml = getFolderIconSvg(folderColor);
+        } else {
+          const customIcon = child.icon && child.icon !== 'p';
+          const displayChar = child.icon || 'p';
+          iconHtml = customIcon ? displayChar : `[${displayChar}]`;
+        }
         card.innerHTML = `
-          <span>${child.type === 'folder' ? '[f]' : '[p]'}</span>
+          <span>${iconHtml}</span>
           <span style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(child.title || 'Untitled')}</span>
         `;
         card.onclick = () => {
@@ -2526,8 +2555,11 @@
       backlinks.forEach(bl => {
         const card = document.createElement("div");
         card.className = "subitem-card";
+        const customIcon = bl.icon && bl.icon !== 'p';
+        const displayChar = bl.icon || 'p';
+        const iconHtml = customIcon ? displayChar : `[${displayChar}]`;
         card.innerHTML = `
-          <span>[p]</span>
+          <span>${iconHtml}</span>
           <span style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(bl.title)}</span>
         `;
         card.onclick = () => {

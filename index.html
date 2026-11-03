@@ -6,7 +6,7 @@
   <title>Eschaton Wiki</title>
   
   <style>
-    /* Clean monochrome aesthetic with dynamic color accents */
+    /* Clean, barebones monochrome aesthetic */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -245,11 +245,10 @@
       margin-right: 6px;
       font-size: 12px;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      opacity: 0.8;
       display: inline-block;
-      min-width: 20px;
+      width: 20px;
       text-align: center;
-      padding: 0 2px;
-      border-radius: 2px;
     }
 
     .tree-title {
@@ -311,7 +310,7 @@
     }
 
     .editor-top {
-      padding: 12px 20px 8px 20px;
+      padding: 10px 20px 8px 20px;
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -325,7 +324,7 @@
       font-size: 11px;
       color: #666;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .meta-left {
@@ -340,15 +339,96 @@
       gap: 4px;
     }
 
-    /* Compact AKA / Aliases Line Above Title */
-    .aka-line {
+    /* Aliases & Tags Pill Rows */
+    .aka-row, .tags-row {
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 11px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      color: #666;
       flex-wrap: wrap;
+      min-height: 22px;
+    }
+
+    .aka-label, .tags-label {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    .chip-container {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .alias-chip, .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background-color: #f8fafc;
+      border: 1px dashed #adadad;
+      color: #475569;
+      line-height: 1.2;
+    }
+
+    .tag-chip {
+      background-color: #f0f0f0;
+      border: 1px solid #d0d0d0;
+      color: #111111;
+      cursor: pointer;
+    }
+
+    .tag-chip:hover {
+      background-color: #e2e8f0;
+      border-color: #111111;
+    }
+
+    .remove-chip-btn {
+      border: none;
+      background: none;
+      color: #888;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 0 2px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .remove-chip-btn:hover {
+      color: #dc2626;
+    }
+
+    .add-chip-btn {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+      padding: 2px 6px;
+      background-color: #ffffff;
+      border: 1px dashed #999;
+      color: #555;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .add-chip-btn:hover {
+      background-color: #f0f0f0;
+      border-color: #111;
+      color: #111;
+    }
+
+    .add-chip-input {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      padding: 2px 6px;
+      width: 120px;
+      border: 1px solid #111;
+      border-radius: 3px;
+      outline: none;
     }
 
     .title-input {
@@ -363,67 +443,6 @@
 
     .title-input:focus {
       border-bottom-color: #111111;
-    }
-
-    /* Compact Tags Line Below Title */
-    .tags-line {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      color: #666;
-      flex-wrap: wrap;
-      margin-top: 2px;
-    }
-
-    .chip-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 1px 6px;
-      border-radius: 3px;
-      font-size: 11px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      background-color: #f0f0f0;
-      border: 1px solid #d0d0d0;
-      color: #222;
-    }
-
-    .chip-badge.alias-chip {
-      background-color: #fafafa;
-      border-style: dashed;
-      color: #444;
-    }
-
-    .chip-remove-btn {
-      cursor: pointer;
-      font-weight: 700;
-      color: #888;
-      font-size: 10px;
-    }
-
-    .chip-remove-btn:hover {
-      color: #c53030;
-    }
-
-    .add-chip-btn {
-      padding: 1px 6px;
-      font-size: 10px;
-      height: 20px;
-      border-style: dashed;
-      color: #666;
-      background-color: transparent;
-    }
-
-    .inline-chip-input {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 11px;
-      padding: 1px 4px;
-      height: 20px;
-      width: 120px;
-      border: 1px solid #111;
-      border-radius: 2px;
     }
 
     .editor-body {
@@ -455,7 +474,7 @@
       outline: none;
     }
 
-    /* Rendered View mode */
+    /* Rendered View Mode */
     .rendered-view {
       flex: 1;
       min-height: 240px;
@@ -464,24 +483,6 @@
       line-height: 1.6;
       color: #111;
       user-select: text;
-    }
-
-    .tag-badge {
-      display: inline-block;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 11px;
-      padding: 1px 6px;
-      background-color: #f0f0f0;
-      border: 1px solid #d0d0d0;
-      border-radius: 3px;
-      color: #333;
-      margin-right: 4px;
-      cursor: pointer;
-    }
-
-    .tag-badge:hover {
-      background-color: #e0e0e0;
-      border-color: #111;
     }
 
     .wiki-link {
@@ -591,7 +592,7 @@
       border-radius: 3px;
       padding: 4px 0;
       z-index: 1000;
-      min-width: 160px;
+      min-width: 150px;
       font-size: 12px;
     }
 
@@ -683,30 +684,6 @@
       width: 100%;
     }
 
-    .preset-row {
-      display: flex;
-      gap: 6px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-    }
-
-    .preset-btn {
-      padding: 4px 8px;
-      font-size: 11px;
-    }
-
-    .color-swatch {
-      width: 24px;
-      height: 24px;
-      border-radius: 3px;
-      cursor: pointer;
-      border: 1px solid #ccc;
-    }
-
-    .color-swatch:hover {
-      transform: scale(1.1);
-    }
-
     .user-table {
       width: 100%;
       border-collapse: collapse;
@@ -781,9 +758,8 @@
     <sidebar>
       <div class="sidebar-controls">
         <div class="sidebar-actions">
-          <!-- Creates new item explicitly at the bottom of the root navigation bar -->
-          <button id="new-page-btn" onclick="createNewItem('page', null)">+ Page</button>
-          <button id="new-folder-btn" onclick="createNewItem('folder', null)">+ Folder</button>
+          <button id="new-page-btn" onclick="createNewItem('page')">+ Page</button>
+          <button id="new-folder-btn" onclick="createNewItem('folder')">+ Folder</button>
           <button onclick="toggleCollapseAll()" title="Collapse All Tree Nodes">Collapse</button>
         </div>
         <input type="text" id="search-input" class="search-box" placeholder="Search title, content, alias, or #tag..." oninput="handleSearchInput()" />
@@ -809,24 +785,24 @@
             <span id="editor-author">Author: -</span>
           </div>
         </div>
-
-        <!-- AKA / Aliases Above Title -->
-        <div id="aka-container" class="aka-line">
-          <span style="font-weight: 600;">AKA:</span>
-          <div id="alias-chips-list" style="display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap;"></div>
-          <button id="add-alias-btn" class="add-chip-btn" onclick="showInlineInput('alias')">+ Alias</button>
-          <input type="text" id="inline-alias-input" class="inline-chip-input hidden" placeholder="Type alias..." onkeydown="handleChipInputKeyDown(event, 'alias')" onblur="commitInlineChip('alias')" />
-        </div>
         
-        <!-- Main Document Title -->
+        <!-- Aliases Above Title -->
+        <div id="aka-row" class="aka-row">
+          <span class="aka-label">AKA:</span>
+          <div id="aliases-list" class="chip-container"></div>
+          <button id="add-alias-btn" class="add-chip-btn" onclick="showAddAliasInput()">+ Alias</button>
+          <input type="text" id="add-alias-input" class="add-chip-input hidden" placeholder="Type alias..." onkeydown="handleAliasInputKey(event)" onblur="commitNewAlias()" />
+        </div>
+
+        <!-- Page Title -->
         <input type="text" id="item-title" class="title-input" placeholder="Title..." oninput="handleEditorInput()" />
         
         <!-- Tags Below Title -->
-        <div id="tags-container" class="tags-line">
-          <span style="font-weight: 600;">Tags:</span>
-          <div id="tag-chips-list" style="display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap;"></div>
-          <button id="add-tag-btn" class="add-chip-btn" onclick="showInlineInput('tag')">+ Tag</button>
-          <input type="text" id="inline-tag-input" class="inline-chip-input hidden" placeholder="Type #tag..." onkeydown="handleChipInputKeyDown(event, 'tag')" onblur="commitInlineChip('tag')" />
+        <div id="tags-row" class="tags-row">
+          <span class="tags-label">Tags:</span>
+          <div id="tags-list" class="chip-container"></div>
+          <button id="add-tag-btn" class="add-chip-btn" onclick="showAddTagInput()">+ Tag</button>
+          <input type="text" id="add-tag-input" class="add-chip-input hidden" placeholder="Type tag..." onkeydown="handleTagInputKey(event)" onblur="commitNewTag()" />
         </div>
       </div>
 
@@ -863,8 +839,8 @@
     <div id="empty-workspace" class="empty-state hidden">
       <span>No pages or folders selected.</span>
       <div style="display: flex; gap: 8px;">
-        <button onclick="createNewItem('page', null)">+ Create First Page</button>
-        <button onclick="createNewItem('folder', null)">+ Create First Folder</button>
+        <button onclick="createNewItem('page')">+ Create First Page</button>
+        <button onclick="createNewItem('folder')">+ Create First Folder</button>
       </div>
     </div>
   </div>
@@ -898,72 +874,6 @@
           <button type="button" onclick="toggleAuthMode()" id="auth-toggle-btn">Switch to Register</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- Change Page Icon Modal -->
-  <div id="icon-modal" class="modal-overlay hidden">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">Change Page Icon</span>
-        <button onclick="toggleIconModal(false)">X</button>
-      </div>
-
-      <div class="form-group">
-        <label>Display Icon (Single Character or Emoji)</label>
-        <input type="text" id="icon-input" maxlength="2" placeholder="e.g. ⚔️, 📜, 👤, 🏰, p" />
-      </div>
-
-      <div style="font-size: 11px; color: #666; margin-bottom: 8px;">Quick Presets:</div>
-      <div class="preset-row">
-        <button type="button" class="preset-btn" onclick="setPresetIcon('⚔️')">⚔️</button>
-        <button type="button" class="preset-btn" onclick="setPresetIcon('📜')">📜</button>
-        <button type="button" class="preset-btn" onclick="setPresetIcon('👤')">👤</button>
-        <button type="button" class="preset-btn" onclick="setPresetIcon('🏰')">🏰</button>
-        <button type="button" class="preset-btn" onclick="setPresetIcon('🎲')">🎲</button>
-        <button type="button" class="preset-btn" onclick="setPresetIcon('👑')">👑</button>
-        <button type="button" class="preset-btn" onclick="setPresetIcon('p')">Reset [p]</button>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
-        <button type="button" onclick="toggleIconModal(false)">Cancel</button>
-        <button type="button" onclick="savePageIcon()" style="background-color: #111; color: #fff;">Save Icon</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Change Folder Color Modal -->
-  <div id="color-modal" class="modal-overlay hidden">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">Change Folder Color</span>
-        <button onclick="toggleColorModal(false)">X</button>
-      </div>
-
-      <div class="form-group">
-        <label>Folder Color</label>
-        <input type="color" id="color-input" style="height: 36px; padding: 2px; cursor: pointer;" />
-      </div>
-
-      <div style="font-size: 11px; color: #666; margin-bottom: 8px;">Presets:</div>
-      <div class="preset-row">
-        <div class="color-swatch" style="background-color: #3b82f6;" onclick="setPresetColor('#3b82f6')"></div>
-        <div class="color-swatch" style="background-color: #10b981;" onclick="setPresetColor('#10b981')"></div>
-        <div class="color-swatch" style="background-color: #f59e0b;" onclick="setPresetColor('#f59e0b')"></div>
-        <div class="color-swatch" style="background-color: #ef4444;" onclick="setPresetColor('#ef4444')"></div>
-        <div class="color-swatch" style="background-color: #8b5cf6;" onclick="setPresetColor('#8b5cf6')"></div>
-        <div class="color-swatch" style="background-color: #64748b;" onclick="setPresetColor('#64748b')"></div>
-        <button type="button" class="preset-btn" onclick="setPresetColor(null)">Reset Color</button>
-      </div>
-
-      <div style="font-size: 11px; color: #666; margin-top: 12px; line-height: 1.4;">
-        Note: Files inside this folder will automatically inherit a slightly darker version of this color unless overridden by subfolders.
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
-        <button type="button" onclick="toggleColorModal(false)">Cancel</button>
-        <button type="button" onclick="saveFolderColor()" style="background-color: #111; color: #fff;">Save Color</button>
-      </div>
     </div>
   </div>
 
@@ -1044,6 +954,72 @@
     <div class="context-menu-item danger" onclick="handleContextAction('delete')">Delete</div>
   </div>
 
+  <!-- Change Page Icon Modal -->
+  <div id="icon-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Change Page Icon</span>
+        <button onclick="toggleIconModal(false)">X</button>
+      </div>
+
+      <div class="form-group">
+        <label>Display Icon (Single Character or Emoji)</label>
+        <input type="text" id="icon-input" maxlength="2" placeholder="e.g. ⚔️, 📜, 👤, 🏰, p" />
+      </div>
+
+      <div style="font-size: 11px; color: #666; margin-bottom: 8px;">Quick Presets:</div>
+      <div class="preset-row" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
+        <button type="button" class="preset-btn" onclick="setPresetIcon('⚔️')">⚔️</button>
+        <button type="button" class="preset-btn" onclick="setPresetIcon('📜')">📜</button>
+        <button type="button" class="preset-btn" onclick="setPresetIcon('👤')">👤</button>
+        <button type="button" class="preset-btn" onclick="setPresetIcon('🏰')">🏰</button>
+        <button type="button" class="preset-btn" onclick="setPresetIcon('🎲')">🎲</button>
+        <button type="button" class="preset-btn" onclick="setPresetIcon('👑')">👑</button>
+        <button type="button" class="preset-btn" onclick="setPresetIcon('p')">Reset [p]</button>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+        <button type="button" onclick="toggleIconModal(false)">Cancel</button>
+        <button type="button" onclick="savePageIcon()" style="background-color: #111; color: #fff;">Save Icon</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Folder Color Modal -->
+  <div id="color-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Change Folder Color</span>
+        <button onclick="toggleColorModal(false)">X</button>
+      </div>
+
+      <div class="form-group">
+        <label>Folder Color</label>
+        <input type="color" id="color-input" style="height: 36px; padding: 2px; cursor: pointer; width: 100%;" />
+      </div>
+
+      <div style="font-size: 11px; color: #666; margin-bottom: 8px;">Presets:</div>
+      <div class="preset-row" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
+        <div class="color-swatch" style="width: 24px; height: 24px; border-radius: 3px; cursor: pointer; border: 1px solid #ccc; background-color: #3b82f6;" onclick="setPresetColor('#3b82f6')"></div>
+        <div class="color-swatch" style="width: 24px; height: 24px; border-radius: 3px; cursor: pointer; border: 1px solid #ccc; background-color: #10b981;" onclick="setPresetColor('#10b981')"></div>
+        <div class="color-swatch" style="width: 24px; height: 24px; border-radius: 3px; cursor: pointer; border: 1px solid #ccc; background-color: #f59e0b;" onclick="setPresetColor('#f59e0b')"></div>
+        <div class="color-swatch" style="width: 24px; height: 24px; border-radius: 3px; cursor: pointer; border: 1px solid #ccc; background-color: #ef4444;" onclick="setPresetColor('#ef4444')"></div>
+        <div class="color-swatch" style="width: 24px; height: 24px; border-radius: 3px; cursor: pointer; border: 1px solid #ccc; background-color: #8b5cf6;" onclick="setPresetColor('#8b5cf6')"></div>
+        <div class="color-swatch" style="width: 24px; height: 24px; border-radius: 3px; cursor: pointer; border: 1px solid #ccc; background-color: #64748b;" onclick="setPresetColor('#64748b')"></div>
+        <button type="button" class="preset-btn" onclick="setPresetColor(null)">Reset Color</button>
+      </div>
+
+      <div style="font-size: 11px; color: #666; margin-top: 12px; line-height: 1.4;">
+        Note: Files inside this folder will automatically inherit a slightly darker version of this color unless overridden by subfolders.
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+        <button type="button" onclick="toggleColorModal(false)">Cancel</button>
+        <button type="button" onclick="saveFolderColor()" style="background-color: #111; color: #fff;">Save Color</button>
+      </div>
+    </div>
+  </div>
+
   <!-- App Script -->
   <script>
     // Exact User Firebase Configuration
@@ -1077,6 +1053,8 @@
     let inlineEditingItemId = null;
     let itemToDeleteId = null;
     let currentMode = "edit"; // "edit" or "view"
+    let isCommittingAlias = false;
+    let isCommittingTag = false;
 
     // Available Slash Commands Definition
     const SLASH_COMMANDS = [
@@ -1107,13 +1085,6 @@
     const elBreadcrumbs = document.getElementById("breadcrumbs");
     const elItemTitle = document.getElementById("item-title");
 
-    const elAliasChipsList = document.getElementById("alias-chips-list");
-    const elTagChipsList = document.getElementById("tag-chips-list");
-    const elAddAliasBtn = document.getElementById("add-alias-btn");
-    const elAddTagBtn = document.getElementById("add-tag-btn");
-    const elInlineAliasInput = document.getElementById("inline-alias-input");
-    const elInlineTagInput = document.getElementById("inline-tag-input");
-
     const elItemContent = document.getElementById("item-content");
     const elRenderedView = document.getElementById("rendered-view");
     const elSlashPopup = document.getElementById("slash-popup");
@@ -1141,12 +1112,6 @@
     const elAuthEmail = document.getElementById("auth-email");
     const elAuthPassword = document.getElementById("auth-password");
     const elAuthError = document.getElementById("auth-error");
-
-    const elIconModal = document.getElementById("icon-modal");
-    const elIconInput = document.getElementById("icon-input");
-
-    const elColorModal = document.getElementById("color-modal");
-    const elColorInput = document.getElementById("color-input");
 
     const elProfileModal = document.getElementById("profile-modal");
     const elProfileUsername = document.getElementById("profile-username");
@@ -1245,7 +1210,7 @@
         itemsList = [];
         snapshot.forEach(doc => {
           const data = doc.data();
-          itemsList.push({
+          const item = {
             id: doc.id,
             title: data.title || "Untitled",
             content: data.content || "",
@@ -1258,7 +1223,10 @@
             order: typeof data.order === "number" ? data.order : 0,
             updatedAt: data.updatedAt,
             updatedBy: data.updatedBy || "Unknown"
-          });
+          };
+          itemsList.push(item);
+          // Expand all pages and folders by default on initial load
+          expandedNodeIds.add(item.id);
         });
 
         if (itemsList.length > 0 && !activeItemId) {
@@ -1391,6 +1359,7 @@
       if (!userProfile || !userProfile.approved) return;
       currentMode = currentMode === "edit" ? "view" : "edit";
       elModeToggleBtn.innerText = currentMode === "edit" ? "[Editing]" : "[Viewing]";
+      renderTree();
       renderActiveItem();
     }
 
@@ -1446,7 +1415,7 @@
       const isExpanded = expandedNodeIds.has(item.id) || searchQuery.trim() !== "";
       const isFolder = item.type === "folder";
       const isActive = item.id === activeItemId;
-      const canEdit = userProfile && userProfile.approved;
+      const canEdit = userProfile && userProfile.approved && currentMode === "edit";
       const inheritedColor = getItemColor(item);
 
       const nodeContainer = document.createElement("div");
@@ -1464,6 +1433,13 @@
         row.ondragleave = (e) => handleDragLeave(e, item.id);
         row.ondrop = (e) => handleDrop(e, item.id);
         row.ondragend = handleDragEnd;
+      } else {
+        row.draggable = false;
+        row.ondragstart = null;
+        row.ondragover = null;
+        row.ondragleave = null;
+        row.ondrop = null;
+        row.ondragend = null;
       }
 
       // Context Menu
@@ -1473,7 +1449,7 @@
         openContextMenu(e, item.id);
       };
 
-      // Single Click: Select and Open Document
+      // Single Click: Select Document (Does NOT toggle expansion)
       row.onclick = (e) => {
         e.stopPropagation();
         activeItemId = item.id;
@@ -1492,7 +1468,7 @@
         }
       };
 
-      // Chevron Click: Toggle Expand/Collapse
+      // Chevron Click: Toggle Expand/Collapse Node
       const chevron = document.createElement("span");
       chevron.className = "tree-chevron";
       if (hasChildren || isFolder) {
@@ -1515,7 +1491,6 @@
 
       if (inheritedColor) {
         icon.style.color = inheritedColor;
-        icon.style.borderColor = inheritedColor;
         if (isActive) {
           row.style.borderLeftColor = inheritedColor;
         }
@@ -1561,9 +1536,6 @@
         const title = document.createElement("span");
         title.className = "tree-title";
         title.innerText = item.title || "Untitled";
-        if (inheritedColor && !isActive) {
-          title.style.color = inheritedColor;
-        }
         row.appendChild(title);
       }
 
@@ -1591,12 +1563,14 @@
       const ctxIconItem = document.getElementById("ctx-icon-item");
       const ctxColorItem = document.getElementById("ctx-color-item");
 
-      if (item && item.type === "folder") {
-        ctxIconItem.classList.add("hidden");
-        ctxColorItem.classList.remove("hidden");
-      } else {
-        ctxIconItem.classList.remove("hidden");
-        ctxColorItem.classList.add("hidden");
+      if (ctxIconItem && ctxColorItem) {
+        if (item && item.type === "folder") {
+          ctxIconItem.classList.add("hidden");
+          ctxColorItem.classList.remove("hidden");
+        } else {
+          ctxIconItem.classList.remove("hidden");
+          ctxColorItem.classList.add("hidden");
+        }
       }
 
       elContextMenu.style.left = `${e.clientX}px`;
@@ -1618,10 +1592,12 @@
       if (!item) return;
 
       if (action === "icon") {
-        elIconInput.value = item.icon || "p";
+        const elIconInput = document.getElementById("icon-input");
+        if (elIconInput) elIconInput.value = item.icon || "p";
         toggleIconModal(true);
       } else if (action === "color") {
-        elColorInput.value = item.color || "#3b82f6";
+        const elColorInput = document.getElementById("color-input");
+        if (elColorInput) elColorInput.value = item.color || "#3b82f6";
         toggleColorModal(true);
       } else if (action === "rename") {
         inlineEditingItemId = targetId;
@@ -1636,20 +1612,21 @@
     }
 
     function toggleIconModal(show) {
-      if (show) {
-        elIconModal.classList.remove("hidden");
-      } else {
-        elIconModal.classList.add("hidden");
-      }
+      const elIconModal = document.getElementById("icon-modal");
+      if (!elIconModal) return;
+      if (show) elIconModal.classList.remove("hidden");
+      else elIconModal.classList.add("hidden");
     }
 
     function setPresetIcon(val) {
-      elIconInput.value = val;
+      const elIconInput = document.getElementById("icon-input");
+      if (elIconInput) elIconInput.value = val;
     }
 
     async function savePageIcon() {
       if (!contextTargetId) return;
-      const newIcon = elIconInput.value.trim() || "p";
+      const elIconInput = document.getElementById("icon-input");
+      const newIcon = (elIconInput ? elIconInput.value.trim() : "") || "p";
       try {
         await db.collection("pages").doc(contextTargetId).update({
           icon: newIcon
@@ -1663,25 +1640,26 @@
     }
 
     function toggleColorModal(show) {
-      if (show) {
-        elColorModal.classList.remove("hidden");
-      } else {
-        elColorModal.classList.add("hidden");
-      }
+      const elColorModal = document.getElementById("color-modal");
+      if (!elColorModal) return;
+      if (show) elColorModal.classList.remove("hidden");
+      else elColorModal.classList.add("hidden");
     }
 
     function setPresetColor(hex) {
+      const elColorInput = document.getElementById("color-input");
       if (hex === null) {
-        elColorInput.value = "#ffffff";
+        if (elColorInput) elColorInput.value = "#ffffff";
         saveFolderColor(null);
       } else {
-        elColorInput.value = hex;
+        if (elColorInput) elColorInput.value = hex;
       }
     }
 
     async function saveFolderColor(overrideHex = undefined) {
       if (!contextTargetId) return;
-      const newColor = overrideHex !== undefined ? overrideHex : elColorInput.value;
+      const elColorInput = document.getElementById("color-input");
+      const newColor = overrideHex !== undefined ? overrideHex : (elColorInput ? elColorInput.value : null);
       try {
         await db.collection("pages").doc(contextTargetId).update({
           color: newColor
@@ -1826,6 +1804,11 @@
     async function handleDrop(e, targetId) {
       e.preventDefault();
       e.stopPropagation();
+
+      if (!userProfile || !userProfile.approved || currentMode !== "edit") {
+        handleDragEnd();
+        return;
+      }
       
       if (!draggedItemId || draggedItemId === targetId) {
         handleDragEnd();
@@ -1904,6 +1887,10 @@
 
     async function handleRootDrop(e) {
       e.preventDefault();
+      if (!userProfile || !userProfile.approved || currentMode !== "edit") {
+        handleDragEnd();
+        return;
+      }
       if (!draggedItemId) return;
 
       const draggedItem = itemsList.find(i => i.id === draggedItemId);
@@ -1968,7 +1955,7 @@
       elItemTitle.disabled = !isEditing;
 
       // Render Aliases & Tags Chips
-      renderTagAndAliasChips(item, isEditing);
+      renderChips(item, isEditing);
 
       updateStatsBar(item.content || "");
 
@@ -1995,128 +1982,205 @@
       renderBacklinks(item);
     }
 
-    function renderTagAndAliasChips(item, isEditing) {
+    // Render Dynamic Pill Chips for Aliases and Tags
+    function renderChips(item, isEditing) {
+      const akaRow = document.getElementById("aka-row");
+      const aliasesList = document.getElementById("aliases-list");
+      const addAliasBtn = document.getElementById("add-alias-btn");
+      const addAliasInput = document.getElementById("add-alias-input");
+
+      const tagsRow = document.getElementById("tags-row");
+      const tagsList = document.getElementById("tags-list");
+      const addTagBtn = document.getElementById("add-tag-btn");
+      const addTagInput = document.getElementById("add-tag-input");
+
       const aliases = item.aliases || [];
       const tags = item.tags || [];
 
-      // Render Aliases
-      elAliasChipsList.innerHTML = "";
+      // Render Aliases (AKA)
+      aliasesList.innerHTML = "";
       aliases.forEach((alias, idx) => {
         const chip = document.createElement("span");
-        chip.className = "chip-badge alias-chip";
-        chip.innerHTML = `
-          <span>${escapeHtml(alias)}</span>
-          ${isEditing ? `<span class="chip-remove-btn" onclick="removeChip('alias', ${idx})">x</span>` : ''}
-        `;
-        elAliasChipsList.appendChild(chip);
+        chip.className = "alias-chip";
+        chip.innerText = alias;
+        if (isEditing) {
+          const rmBtn = document.createElement("button");
+          rmBtn.className = "remove-chip-btn";
+          rmBtn.innerText = "x";
+          rmBtn.onclick = (e) => {
+            e.stopPropagation();
+            removeAlias(item, idx);
+          };
+          chip.appendChild(rmBtn);
+        }
+        aliasesList.appendChild(chip);
       });
+
+      if (isEditing) {
+        akaRow.classList.remove("hidden");
+        addAliasBtn.classList.remove("hidden");
+        addAliasInput.classList.add("hidden");
+      } else {
+        addAliasBtn.classList.add("hidden");
+        addAliasInput.classList.add("hidden");
+        if (aliases.length === 0) {
+          akaRow.classList.add("hidden");
+        } else {
+          akaRow.classList.remove("hidden");
+        }
+      }
 
       // Render Tags
-      elTagChipsList.innerHTML = "";
+      tagsList.innerHTML = "";
       tags.forEach((tag, idx) => {
         const chip = document.createElement("span");
-        chip.className = "chip-badge";
-        chip.innerHTML = `
-          <span>#${escapeHtml(tag)}</span>
-          ${isEditing ? `<span class="chip-remove-btn" onclick="removeChip('tag', ${idx})">x</span>` : ''}
-        `;
-        elTagChipsList.appendChild(chip);
+        chip.className = "tag-chip";
+        chip.innerText = `#${tag}`;
+        chip.onclick = () => filterByTag(tag);
+        if (isEditing) {
+          const rmBtn = document.createElement("button");
+          rmBtn.className = "remove-chip-btn";
+          rmBtn.innerText = "x";
+          rmBtn.onclick = (e) => {
+            e.stopPropagation();
+            removeTag(item, idx);
+          };
+          chip.appendChild(rmBtn);
+        }
+        tagsList.appendChild(chip);
       });
 
-      // Show/Hide Add Buttons
       if (isEditing) {
-        elAddAliasBtn.classList.remove("hidden");
-        elAddTagBtn.classList.remove("hidden");
+        tagsRow.classList.remove("hidden");
+        addTagBtn.classList.remove("hidden");
+        addTagInput.classList.add("hidden");
       } else {
-        elAddAliasBtn.classList.add("hidden");
-        elAddTagBtn.classList.add("hidden");
-        elInlineAliasInput.classList.add("hidden");
-        elInlineTagInput.classList.add("hidden");
+        addTagBtn.classList.add("hidden");
+        addTagInput.classList.add("hidden");
+        if (tags.length === 0) {
+          tagsRow.classList.add("hidden");
+        } else {
+          tagsRow.classList.remove("hidden");
+        }
       }
     }
 
-    function showInlineInput(type) {
-      if (type === 'alias') {
-        elAddAliasBtn.classList.add("hidden");
-        elInlineAliasInput.classList.remove("hidden");
-        elInlineAliasInput.value = "";
-        elInlineAliasInput.focus();
-      } else if (type === 'tag') {
-        elAddTagBtn.classList.add("hidden");
-        elInlineTagInput.classList.remove("hidden");
-        elInlineTagInput.value = "";
-        elInlineTagInput.focus();
-      }
+    // Alias Management
+    function showAddAliasInput() {
+      const addAliasBtn = document.getElementById("add-alias-btn");
+      const addAliasInput = document.getElementById("add-alias-input");
+      addAliasBtn.classList.add("hidden");
+      addAliasInput.classList.remove("hidden");
+      addAliasInput.value = "";
+      addAliasInput.focus();
     }
 
-    function handleChipInputKeyDown(e, type) {
+    function handleAliasInputKey(e) {
       if (e.key === "Enter") {
         e.preventDefault();
-        commitInlineChip(type);
+        commitNewAlias();
       } else if (e.key === "Escape") {
-        cancelInlineChip(type);
+        const addAliasBtn = document.getElementById("add-alias-btn");
+        const addAliasInput = document.getElementById("add-alias-input");
+        addAliasInput.classList.add("hidden");
+        addAliasBtn.classList.remove("hidden");
       }
     }
 
-    async function commitInlineChip(type) {
-      if (!activeItemId) return;
-      const item = itemsList.find(i => i.id === activeItemId);
-      if (!item) return;
+    async function commitNewAlias() {
+      if (isCommittingAlias) return;
+      isCommittingAlias = true;
+      const addAliasInput = document.getElementById("add-alias-input");
+      const val = addAliasInput.value.trim();
 
-      if (type === 'alias') {
-        const val = elInlineAliasInput.value.trim();
-        elInlineAliasInput.classList.add("hidden");
-        elAddAliasBtn.classList.remove("hidden");
-        if (val) {
-          const updatedAliases = [...(item.aliases || []), val];
-          await updateDocumentChips(item.id, { aliases: updatedAliases });
-        }
-      } else if (type === 'tag') {
-        let val = elInlineTagInput.value.trim().replace(/^#/, '');
-        elInlineTagInput.classList.add("hidden");
-        elAddTagBtn.classList.remove("hidden");
-        if (val) {
-          const updatedTags = [...(item.tags || []), val];
-          await updateDocumentChips(item.id, { tags: updatedTags });
+      if (val && activeItemId) {
+        const item = itemsList.find(i => i.id === activeItemId);
+        if (item) {
+          const currentAliases = item.aliases || [];
+          if (!currentAliases.includes(val)) {
+            const updated = [...currentAliases, val];
+            item.aliases = updated;
+            await saveItemMetadata(item.id, { aliases: updated });
+          }
         }
       }
-    }
 
-    function cancelInlineChip(type) {
-      if (type === 'alias') {
-        elInlineAliasInput.classList.add("hidden");
-        elAddAliasBtn.classList.remove("hidden");
-      } else if (type === 'tag') {
-        elInlineTagInput.classList.add("hidden");
-        elAddTagBtn.classList.remove("hidden");
-      }
-    }
-
-    async function removeChip(type, index) {
-      if (!activeItemId) return;
+      isCommittingAlias = false;
       const item = itemsList.find(i => i.id === activeItemId);
-      if (!item) return;
+      if (item) renderActiveItem();
+    }
 
-      if (type === 'alias') {
-        const updated = [...(item.aliases || [])];
-        updated.splice(index, 1);
-        await updateDocumentChips(item.id, { aliases: updated });
-      } else if (type === 'tag') {
-        const updated = [...(item.tags || [])];
-        updated.splice(index, 1);
-        await updateDocumentChips(item.id, { tags: updated });
+    async function removeAlias(item, index) {
+      const updated = [...(item.aliases || [])];
+      updated.splice(index, 1);
+      item.aliases = updated;
+      await saveItemMetadata(item.id, { aliases: updated });
+      renderActiveItem();
+    }
+
+    // Tag Management
+    function showAddTagInput() {
+      const addTagBtn = document.getElementById("add-tag-btn");
+      const addTagInput = document.getElementById("add-tag-input");
+      addTagBtn.classList.add("hidden");
+      addTagInput.classList.remove("hidden");
+      addTagInput.value = "";
+      addTagInput.focus();
+    }
+
+    function handleTagInputKey(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commitNewTag();
+      } else if (e.key === "Escape") {
+        const addTagBtn = document.getElementById("add-tag-btn");
+        const addTagInput = document.getElementById("add-tag-input");
+        addTagInput.classList.add("hidden");
+        addTagBtn.classList.remove("hidden");
       }
     }
 
-    async function updateDocumentChips(id, patchObj) {
+    async function commitNewTag() {
+      if (isCommittingTag) return;
+      isCommittingTag = true;
+      const addTagInput = document.getElementById("add-tag-input");
+      const val = addTagInput.value.trim().replace(/^#/, '');
+
+      if (val && activeItemId) {
+        const item = itemsList.find(i => i.id === activeItemId);
+        if (item) {
+          const currentTags = item.tags || [];
+          if (!currentTags.includes(val)) {
+            const updated = [...currentTags, val];
+            item.tags = updated;
+            await saveItemMetadata(item.id, { tags: updated });
+          }
+        }
+      }
+
+      isCommittingTag = false;
+      const item = itemsList.find(i => i.id === activeItemId);
+      if (item) renderActiveItem();
+    }
+
+    async function removeTag(item, index) {
+      const updated = [...(item.tags || [])];
+      updated.splice(index, 1);
+      item.tags = updated;
+      await saveItemMetadata(item.id, { tags: updated });
+      renderActiveItem();
+    }
+
+    async function saveItemMetadata(id, updates) {
       try {
         await db.collection("pages").doc(id).update({
-          ...patchObj,
+          ...updates,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
           updatedBy: getUserDisplayName(userProfile)
         });
-      } catch(err) {
-        console.error("Chip update error:", err);
+      } catch (err) {
+        console.error("Error saving metadata:", err);
+        showToast("Error updating metadata");
       }
     }
 
@@ -2167,6 +2231,11 @@
       });
 
       elRenderedView.innerHTML = html;
+    }
+
+    function filterByTag(tagName) {
+      document.getElementById("search-input").value = `#${tagName}`;
+      handleSearchInput();
     }
 
     function escapeHtmlAttr(str) {
@@ -2317,7 +2386,7 @@
         const item = document.createElement("div");
         item.className = "popup-menu-item";
         const aliasText = (p.aliases && p.aliases.length > 0) ? ` <small style="color:#777;">(${p.aliases.join(', ')})</small>` : '';
-        item.innerHTML = `<span>[${p.icon || 'p'}] ${escapeHtml(p.title)}${aliasText}</span>`;
+        item.innerHTML = `<span>[p] ${escapeHtml(p.title)}${aliasText}</span>`;
         item.onclick = (e) => {
           e.stopPropagation();
           applyWikilink(p.title);
@@ -2407,9 +2476,8 @@
       children.forEach(child => {
         const card = document.createElement("div");
         card.className = "subitem-card";
-        const iconDisplay = child.icon || (child.type === 'folder' ? 'f' : 'p');
         card.innerHTML = `
-          <span>[${iconDisplay}]</span>
+          <span>${child.type === 'folder' ? '[f]' : '[p]'}</span>
           <span style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(child.title || 'Untitled')}</span>
         `;
         card.onclick = () => {
@@ -2458,9 +2526,8 @@
       backlinks.forEach(bl => {
         const card = document.createElement("div");
         card.className = "subitem-card";
-        const iconDisplay = bl.icon || 'p';
         card.innerHTML = `
-          <span>[${iconDisplay}]</span>
+          <span>[p]</span>
           <span style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(bl.title)}</span>
         `;
         card.onclick = () => {
@@ -2473,12 +2540,13 @@
       });
     }
 
-    // Auto-Save Handler to Firestore
+    // Auto-Save Title & Text Content Handler to Firestore
     function handleEditorInput() {
       const canEdit = userProfile && userProfile.approved;
       if (!canEdit || !activeItemId || currentMode === "view") return;
 
       const newContent = elItemContent.value;
+
       updateStatsBar(newContent);
       elEditorStatus.innerText = "Saving...";
       clearTimeout(saveTimeout);
@@ -2500,14 +2568,14 @@
       }, 400);
     }
 
-    // Item Creation Actions (Explicit target parentId or null for root bottom)
+    // Item Creation Actions
     async function createNewItem(type = 'page', targetParentId = null) {
       if (!userProfile || !userProfile.approved) {
         showToast("Cannot create: Account pending approval.");
         return;
       }
 
-      const parentId = targetParentId;
+      const parentId = targetParentId !== null ? targetParentId : (activeItemId ? activeItemId : null);
       const siblings = itemsList.filter(i => i.parentId === parentId);
       const nextOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.order)) + 1 : 0;
 
@@ -2518,8 +2586,6 @@
           tags: [],
           aliases: [],
           type: type,
-          icon: type === 'folder' ? 'f' : 'p',
-          color: null,
           parentId: parentId,
           order: nextOrder,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),

@@ -927,6 +927,83 @@
     </div>
   </div>
 
+  <!-- Profile Modal -->
+  <div id="profile-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">User Profile</span>
+        <button onclick="toggleProfileModal(false)">X</button>
+      </div>
+
+      <form onsubmit="handleProfileSubmit(event)">
+        <div class="form-group">
+          <label>Display Name / Username</label>
+          <input type="text" id="profile-username" required placeholder="Enter username..." />
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+          <button type="button" onclick="toggleProfileModal(false)">Cancel</button>
+          <button type="submit" style="background-color: #111; color: #fff;">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Gatekeeper Modal -->
+  <div id="admin-modal" class="modal-overlay hidden">
+    <div class="modal" style="max-width: 580px;">
+      <div class="modal-header">
+        <span class="modal-title">GM Admin Gatekeeper — User Greenlights</span>
+        <button onclick="toggleAdminModal(false)">X</button>
+      </div>
+
+      <p style="font-size: 12px; color: #666; margin-bottom: 12px;">
+        Newly registered player accounts require an <strong>Approved</strong> greenlight to edit documents or move items.
+      </p>
+
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>User / Display Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="admin-user-rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Confirm Delete</span>
+        <button onclick="toggleDeleteModal(false)">X</button>
+      </div>
+      <p id="delete-modal-msg" style="font-size: 13px; color: #111; margin-bottom: 16px; line-height: 1.5;"></p>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button onclick="toggleDeleteModal(false)">Cancel</button>
+        <button id="confirm-delete-btn" onclick="confirmDeleteItem()" style="background-color: #c53030; color: #fff; border-color: #c53030;">Delete Item</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notice -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Right-Click Context Menu -->
+  <div id="context-menu" class="context-menu hidden">
+    <div id="ctx-icon-item" class="context-menu-item" onclick="handleContextAction('icon')">Change Icon</div>
+    <div id="ctx-color-item" class="context-menu-item" onclick="handleContextAction('color')">Change Color</div>
+    <div class="context-menu-item" onclick="handleContextAction('rename')">Rename</div>
+    <div class="context-menu-item" onclick="handleContextAction('subpage')">+ New Sub-page</div>
+    <div class="context-menu-item" onclick="handleContextAction('subfolder')">+ New Sub-folder</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item danger" onclick="handleContextAction('delete')">Delete</div>
+  </div>
+
   <!-- App Script -->
   <script>
     // Exact User Firebase Configuration
@@ -2711,6 +2788,7 @@
     }
 
     function renderAdminTable(users) {
+      if (!elAdminUserRows) return;
       elAdminUserRows.innerHTML = "";
       if (!users || users.length === 0) {
         elAdminUserRows.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#888;">No registered users found.</td></tr>`;

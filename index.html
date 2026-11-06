@@ -268,7 +268,6 @@
       border-radius: 2px;
     }
 
-    /* Recolor custom page icons / text to match document colors */
     .tree-icon.colored-icon {
       filter: contrast(120%) saturate(150%);
     }
@@ -1164,6 +1163,7 @@
     let saveTimeout = null;
     let searchQuery = "";
     let contextTargetId = null;
+    let modalTargetId = null;
     let inlineEditingItemId = null;
     let inlineIconItemId = null;
     let itemToDeleteId = null;
@@ -1313,7 +1313,7 @@
       return circle;
     }
 
-    // Manual item colors only (no auto-darkening)
+    // Manual item colors only
     function getItemColor(item) {
       if (!item) return null;
       return item.color || null;
@@ -1818,6 +1818,7 @@
       }
 
       contextTargetId = id;
+      modalTargetId = id;
       const isMulti = selectedItemIds.size > 1;
       const item = itemsList.find(i => i.id === id);
 
@@ -1871,6 +1872,7 @@
 
     async function handleContextAction(action) {
       const targetId = contextTargetId;
+      modalTargetId = targetId;
       closeContextMenu();
       if (!targetId || !userProfile || !userProfile.approved) return;
 
@@ -1961,9 +1963,10 @@
     }
 
     async function saveFolderColor(overrideHex = undefined) {
-      if (!contextTargetId) return;
+      const targetId = modalTargetId || activeItemId;
+      if (!targetId) return;
       const newColor = overrideHex !== undefined ? overrideHex : elColorInput.value;
-      const targetIds = selectedItemIds.has(contextTargetId) ? Array.from(selectedItemIds) : [contextTargetId];
+      const targetIds = selectedItemIds.has(targetId) ? Array.from(selectedItemIds) : [targetId];
 
       try {
         const batch = db.batch();

@@ -1154,4 +1154,1778 @@
     /* State Management */
     let firebaseUser = null;
     let userProfile = null;
-<!-- ... existing code -->
+    let itemsList = []; // Stores all pages & folders
+    let activeItemId = null;
+    let expandedNodeIds = new Set();
+    let draggedItemId = null;
+    let dragOverTargetId = null;
+    let dragPosition = null; // 'inside', 'above', 'below'
+    let isRegisterMode = false;
+    let saveTimeout = null;
+    let searchQuery = "";
+    let contextTargetId = null;
+    let inlineEditingItemId = null;
+    let inlineIconItemId = null;
+    let itemToDeleteId = null;
+    let currentMode = "edit"; // "edit" or "view"
+    let selectedItemIds = new Set();
+    let lastClickedId = null;
+
+    // Available Slash Commands Definition
+    const SLASH_COMMANDS = [
+      { cmd: "/h1", label: "Heading 1", snippet: "# " },
+      { cmd: "/h2", label: "Heading 2", snippet: "## " },
+      { cmd: "/bullet", label: "Bullet List Item", snippet: "- " },
+      { cmd: "/check", label: "Checklist Item", snippet: "- [ ] " },
+      { cmd: "/quote", label: "Blockquote", snippet: "> " },
+      { cmd: "/table", label: "Table Template", snippet: "| Column 1 | Column 2 |\n| --- | --- |\n| Item 1 | Item 2 |" }
+    ];
+
+    // DOM References
+    const elModeToggleBtn = document.getElementById("mode-toggle-btn");
+    const elAuthBtn = document.getElementById("auth-btn");
+
+    const elProfileMenuContainer = document.getElementById("profile-menu-container");
+    const elHeaderUsername = document.getElementById("header-username");
+    const elHeaderAvatarSlot = document.getElementById("header-avatar-slot");
+    const elProfileDropdown = document.getElementById("profile-dropdown");
+    const elDropdownAdminItem = document.getElementById("dropdown-admin-item");
+
+    const elPendingBanner = document.getElementById("pending-banner");
+
+    const elTreeContainer = document.getElementById("tree-container");
+    const elNewPageBtn = document.getElementById("new-page-btn");
+    const elNewFolderBtn = document.getElementById("new-folder-btn");
+
+    const elMainEditor = document.getElementById("main-editor");
+    const elEmptyWorkspace = document.getElementById("empty-workspace");
+    const elBreadcrumbs = document.getElementById("breadcrumbs");
+    const elItemTitle = document.getElementById("item-title");
+
+    const elAliasesList = document.getElementById("aliases-list");
+    const elTagsList = document.getElementById("tags-list");
+    const elAddAliasBtn = document.getElementById("add-alias-btn");
+    const elAddTagBtn = document.getElementById("add-tag-btn");
+    const elAddAliasInput = document.getElementById("add-alias-input");
+    const elAddTagInput = document.getElementById("add-tag-input");
+
+    const elItemContent = document.getElementById("item-content");
+    const elRenderedView = document.getElementById("rendered-view");
+    const elSlashPopup = document.getElementById("slash-popup");
+    const elWikilinkPopup = document.getElementById("wikilink-popup");
+
+    const elEditorStatus = document.getElementById("editor-status");
+    const elStatsBar = document.getElementById("stats-bar");
+    const elPresenceContainer = document.getElementById("presence-container");
+    const elEditorAuthor = document.getElementById("editor-author");
+    const elEditorTypeBadge = document.getElementById("editor-type-badge");
+
+    const elSubitemsSection = document.getElementById("subitems-section");
+    const elSubitemsTitle = document.getElementById("subitems-title");
+    const elSubitemsGrid = document.getElementById("subitems-grid");
+
+    const elBacklinksSection = document.getElementById("backlinks-section");
+    const elBacklinksGrid = document.getElementById("backlinks-grid");
+
+    const elAuthModal = document.getElementById("auth-modal");
+    const elAuthModalTitle = document.getElementById("auth-modal-title");
+    const elUsernameGroup = document.getElementById("username-group");
+    const elAuthUsername = document.getElementById("auth-username");
+    const elAuthSubmitBtn = document.getElementById("auth-submit-btn");
+    const elAuthToggleBtn = document.getElementById("auth-toggle-btn");
+    const elAuthEmail = document.getElementById("auth-email");
+    const elAuthPassword = document.getElementById("auth-password");
+    const elAuthError = document.getElementById("auth-error");
+
+    const elColorModal = document.getElementById("color-modal");
+    const elColorInput = document.getElementById("color-input");
+
+    const elProfileModal = document.getElementById("profile-modal");
+    const elProfileUsername = document.getElementById("profile-username");
+    const elProfileColorInput = document.getElementById("profile-color-input");
+
+    const elAdminModal = document.getElementById("admin-modal");
+    const elAdminUserRows = document.getElementById("admin-user-rows");
+    const elToast = document.getElementById("toast");
+    const elContextMenu = document.getElementById("context-menu");
+
+    // Initialize Application
+    window.addEventListener("DOMContentLoaded", () => {
+      initAuthListener();
+      initPagesRealtimeListener();
+      initUsersRealtimeListener();
+      initPresenceRealtimeListener();
+
+      // Dismiss context menu, dropdowns, and popups on external click
+      window.addEventListener("click", () => {
+        closeContextMenu();
+        hideProfileDropdown();
+        hideSlashPopup();
+        hideWikilinkPopup();
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeContextMenu();
+          hideProfileDropdown();
+          hideSlashPopup();
+          hideWikilinkPopup();
+        }
+      });
+    });
+
+    // Clean Presence Removal on Window Close / Tab Unload
+    window.addEventListener("beforeunload", () => {
+      removeUserPresence();
+    });
+
+    window.addEventListener("pagehide", () => {
+      removeUserPresence();
+    });
+
+    // Helper: User Display Names and Account Profile Colors
+    function getUserDisplayName(profile) {
+      if (!profile) return "Unknown";
+      if (profile.displayName && profile.displayName.trim() !== "") {
+        return profile.displayName.trim();
+      }
+      if (profile.email) {
+        return profile.email.split("@")[0];
+      }
+      return "User";
+    }
+
+    function getProfileColor(profile) {
+      if (profile && profile.color) return profile.color;
+      return "#3b82f6"; // Default blue accent
+    }
+
+    // Google-style Avatar Circle Builder
+    function renderAvatarCircle(name, color, size = 20) {
+      const initial = (name || "U").charAt(0).toUpperCase();
+      const circle = document.createElement("span");
+      circle.className = "user-avatar-circle";
+      circle.style.width = `${size}px`;
+      circle.style.height = `${size}px`;
+      circle.style.fontSize = `${Math.floor(size * 0.55)}px`;
+      circle.style.backgroundColor = color || "#3b82f6";
+      circle.innerText = initial;
+      return circle;
+    }
+
+    // Manual item colors only (no auto-darkening)
+    function getItemColor(item) {
+      if (!item) return null;
+      return item.color || null;
+    }
+
+    // 1. Realtime Auth State
+    function initAuthListener() {
+      auth.onAuthStateChanged(user => {
+        firebaseUser = user;
+        if (user) {
+          db.collection("users").doc(user.uid).onSnapshot(doc => {
+            if (doc.exists) {
+              userProfile = { uid: user.uid, ...doc.data() };
+            } else {
+              userProfile = { uid: user.uid, email: user.email, displayName: "", color: "#3b82f6", approved: false, isAdmin: false };
+            }
+            updateUserPresence();
+            renderUI();
+          });
+        } else {
+          removeUserPresence();
+          userProfile = null;
+          renderUI();
+        }
+      });
+    }
+
+    // 2. Realtime Pages Subscription ('pages' collection)
+    function initPagesRealtimeListener() {
+      db.collection("pages").onSnapshot(snapshot => {
+        const isFirstLoad = itemsList.length === 0;
+        itemsList = [];
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          itemsList.push({
+            id: doc.id,
+            title: data.title || "Untitled",
+            content: data.content || "",
+            tags: Array.isArray(data.tags) ? data.tags : [],
+            aliases: Array.isArray(data.aliases) ? data.aliases : [],
+            type: data.type || "page",
+            icon: data.icon || (data.type === 'folder' ? 'f' : 'p'),
+            color: data.color || null,
+            parentId: data.parentId || null,
+            order: typeof data.order === "number" ? data.order : 0,
+            updatedAt: data.updatedAt,
+            updatedBy: data.updatedBy || "Unknown"
+          });
+        });
+
+        // Expand all nodes by default on initial load
+        if (isFirstLoad) {
+          itemsList.forEach(item => expandedNodeIds.add(item.id));
+        }
+
+        if (itemsList.length > 0 && !activeItemId) {
+          const firstPage = itemsList.find(i => i.type === 'page') || itemsList[0];
+          activeItemId = firstPage.id;
+          selectedItemIds.clear();
+          selectedItemIds.add(activeItemId);
+        } else if (itemsList.length === 0) {
+          activeItemId = null;
+          selectedItemIds.clear();
+        }
+
+        renderTree();
+        renderActiveItem();
+      }, err => {
+        console.error("Firestore Pages error:", err);
+      });
+    }
+
+    // 3. Realtime Users Subscription
+    function initUsersRealtimeListener() {
+      db.collection("users").onSnapshot(snapshot => {
+        const users = [];
+        snapshot.forEach(doc => {
+          users.push({ uid: doc.id, ...doc.data() });
+        });
+        renderAdminTable(users);
+      }, err => {
+        console.error("Firestore Users error:", err);
+      });
+    }
+
+    // 4. Realtime Presence Subscription
+    function initPresenceRealtimeListener() {
+      db.collection("presence").onSnapshot(snapshot => {
+        const presenceMap = new Map(); // itemId -> list of user objects
+        const currentActivePresence = [];
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data && data.activeItemId) {
+            if (!presenceMap.has(data.activeItemId)) {
+              presenceMap.set(data.activeItemId, []);
+            }
+            presenceMap.get(data.activeItemId).push(data);
+          }
+
+          if (data && data.activeItemId === activeItemId) {
+            currentActivePresence.push(data);
+          }
+        });
+
+        renderTreePresenceBadges(presenceMap);
+        renderHeaderPresenceBadges(currentActivePresence);
+      });
+    }
+
+    function updateUserPresence() {
+      if (!firebaseUser || !userProfile) return;
+      db.collection("presence").doc(firebaseUser.uid).set({
+        uid: firebaseUser.uid,
+        name: getUserDisplayName(userProfile),
+        color: getProfileColor(userProfile),
+        email: firebaseUser.email,
+        activeItemId: activeItemId,
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+
+    async function removeUserPresence() {
+      if (!firebaseUser) return;
+      try {
+        await db.collection("presence").doc(firebaseUser.uid).delete();
+      } catch (err) {
+        console.error("Remove presence error:", err);
+      }
+    }
+
+    function renderHeaderPresenceBadges(presenceList) {
+      elPresenceContainer.innerHTML = "";
+      if (!presenceList || presenceList.length === 0) return;
+
+      presenceList.forEach(p => {
+        const avatar = renderAvatarCircle(p.name, p.color, 20);
+        avatar.title = `Active: ${p.name}`;
+        elPresenceContainer.appendChild(avatar);
+      });
+    }
+
+    function renderTreePresenceBadges(presenceMap) {
+      document.querySelectorAll(".tree-presence-group").forEach(el => el.remove());
+
+      presenceMap.forEach((users, itemId) => {
+        const row = document.querySelector(`.tree-row[data-id="${itemId}"]`);
+        if (row) {
+          const container = document.createElement("span");
+          container.className = "tree-presence-group";
+          users.forEach(u => {
+            const avatar = renderAvatarCircle(u.name, u.color, 16);
+            avatar.title = `Viewing: ${u.name}`;
+            container.appendChild(avatar);
+          });
+          row.appendChild(container);
+        }
+      });
+    }
+
+    // Main Render Pipeline
+    function renderUI() {
+      if (firebaseUser) {
+        const name = getUserDisplayName(userProfile);
+        const color = getProfileColor(userProfile);
+        
+        elHeaderUsername.innerText = name;
+        elHeaderAvatarSlot.innerHTML = "";
+        elHeaderAvatarSlot.appendChild(renderAvatarCircle(name, color, 20));
+
+        elAuthBtn.classList.add("hidden");
+        elProfileMenuContainer.classList.remove("hidden");
+
+        const isApproved = userProfile && userProfile.approved;
+        const isAdmin = userProfile && userProfile.isAdmin;
+
+        if (isApproved) {
+          elPendingBanner.classList.add("hidden");
+          elModeToggleBtn.disabled = false;
+        } else {
+          elPendingBanner.classList.remove("hidden");
+          currentMode = "view";
+          elModeToggleBtn.disabled = true;
+          elModeToggleBtn.innerText = "[View Only]";
+        }
+
+        if (isAdmin) {
+          elDropdownAdminItem.classList.remove("hidden");
+        } else {
+          elDropdownAdminItem.classList.add("hidden");
+        }
+      } else {
+        elHeaderUsername.innerText = "Not Signed In";
+        elHeaderAvatarSlot.innerHTML = "";
+        elProfileMenuContainer.classList.add("hidden");
+        elPendingBanner.classList.add("hidden");
+        elAuthBtn.classList.remove("hidden");
+        currentMode = "view";
+        elModeToggleBtn.disabled = true;
+        elModeToggleBtn.innerText = "[View Only]";
+      }
+
+      const canEdit = userProfile && userProfile.approved;
+      elNewPageBtn.disabled = !canEdit;
+      elNewFolderBtn.disabled = !canEdit;
+
+      if (canEdit && elModeToggleBtn.disabled === false) {
+        elModeToggleBtn.innerText = currentMode === "edit" ? "[Editing]" : "[Viewing]";
+      }
+
+      renderTree();
+      renderActiveItem();
+    }
+
+    // View / Edit Mode Switch
+    function toggleViewMode() {
+      if (!userProfile || !userProfile.approved) return;
+      currentMode = currentMode === "edit" ? "view" : "edit";
+      elModeToggleBtn.innerText = currentMode === "edit" ? "[Editing]" : "[Viewing]";
+      renderTree();
+      renderActiveItem();
+    }
+
+    // Top Right Profile Dropdown Menu Handlers
+    function toggleProfileDropdown(e) {
+      e.stopPropagation();
+      elProfileDropdown.classList.toggle("hidden");
+    }
+
+    function hideProfileDropdown() {
+      elProfileDropdown.classList.add("hidden");
+    }
+
+    // TREE VIEW BUILDER & MULTI-SELECTION
+    function renderTree() {
+      elTreeContainer.innerHTML = "";
+      if (itemsList.length === 0) {
+        elTreeContainer.innerHTML = `<div style="padding: 12px; font-size: 12px; color: #888; text-align: center;">No items yet.</div>`;
+        return;
+      }
+
+      let filteredItems = itemsList;
+      const q = searchQuery.trim().toLowerCase();
+
+      if (q !== "") {
+        if (q.startsWith("#")) {
+          const tagTerm = q.slice(1);
+          filteredItems = itemsList.filter(i => {
+            const hasTag = (i.tags || []).some(t => t.toLowerCase().includes(tagTerm));
+            const hasContentTag = (i.content || "").toLowerCase().includes("#" + tagTerm);
+            return hasTag || hasContentTag;
+          });
+        } else {
+          filteredItems = itemsList.filter(i => 
+            i.title.toLowerCase().includes(q) || 
+            i.content.toLowerCase().includes(q) ||
+            (i.tags || []).some(t => t.toLowerCase().includes(q)) ||
+            (i.aliases || []).some(a => a.toLowerCase().includes(q))
+          );
+        }
+      }
+
+      const rootItems = filteredItems
+        .filter(i => q !== "" ? true : i.parentId === null)
+        .sort((a, b) => a.order - b.order);
+
+      if (rootItems.length === 0) {
+        elTreeContainer.innerHTML = `<div style="padding: 12px; font-size: 12px; color: #888; text-align: center;">No matching items.</div>`;
+        return;
+      }
+
+      rootItems.forEach(item => {
+        elTreeContainer.appendChild(createTreeNodeElement(item, 0));
+      });
+    }
+
+    function getVisibleOrderedItems() {
+      const visible = [];
+      function traverse(parentId) {
+        const children = itemsList
+          .filter(i => i.parentId === parentId)
+          .sort((a, b) => a.order - b.order);
+
+        children.forEach(child => {
+          visible.push(child);
+          if (expandedNodeIds.has(child.id)) {
+            traverse(child.id);
+          }
+        });
+      }
+      traverse(null);
+      return visible;
+    }
+
+    function createTreeNodeElement(item, depth) {
+      const children = itemsList
+        .filter(i => i.parentId === item.id)
+        .sort((a, b) => a.order - b.order);
+
+      const hasChildren = children.length > 0;
+      const isExpanded = expandedNodeIds.has(item.id) || searchQuery.trim() !== "";
+      const isFolder = item.type === "folder";
+      const isActive = item.id === activeItemId;
+      const isSelected = selectedItemIds.has(item.id);
+      const canEdit = userProfile && userProfile.approved;
+      const isEditingMode = canEdit && currentMode === "edit";
+      const customColor = getItemColor(item);
+
+      const nodeContainer = document.createElement("div");
+      nodeContainer.className = "tree-node";
+
+      const row = document.createElement("div");
+      row.className = `tree-row ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`;
+      row.style.paddingLeft = `${depth * 14 + 8}px`;
+      row.dataset.id = item.id;
+      
+      // Node dragging only enabled while in Editing mode
+      if (isEditingMode) {
+        row.draggable = true;
+        row.ondragstart = (e) => handleDragStart(e, item.id);
+        row.ondragover = (e) => handleDragOver(e, item.id);
+        row.ondragleave = (e) => handleDragLeave(e, item.id);
+        row.ondrop = (e) => handleDrop(e, item.id);
+        row.ondragend = handleDragEnd;
+      } else {
+        row.draggable = false;
+      }
+
+      // Context Menu
+      row.oncontextmenu = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openContextMenu(e, item.id);
+      };
+
+      // Shift + Click Range Selection & Click Handling
+      row.onclick = (e) => {
+        e.stopPropagation();
+
+        if (e.shiftKey && lastClickedId) {
+          const visibleList = getVisibleOrderedItems();
+          const startIdx = visibleList.findIndex(i => i.id === lastClickedId);
+          const endIdx = visibleList.findIndex(i => i.id === item.id);
+
+          if (startIdx !== -1 && endIdx !== -1) {
+            const min = Math.min(startIdx, endIdx);
+            const max = Math.max(startIdx, endIdx);
+            if (!e.ctrlKey && !e.metaKey) selectedItemIds.clear();
+            for (let i = min; i <= max; i++) {
+              selectedItemIds.add(visibleList[i].id);
+            }
+          }
+        } else if (e.ctrlKey || e.metaKey) {
+          if (selectedItemIds.has(item.id)) selectedItemIds.delete(item.id);
+          else selectedItemIds.add(item.id);
+        } else {
+          selectedItemIds.clear();
+          selectedItemIds.add(item.id);
+        }
+
+        lastClickedId = item.id;
+        activeItemId = item.id;
+        updateUserPresence();
+        renderTree();
+        renderActiveItem();
+      };
+
+      // Double Click: Toggle Expand/Collapse Node
+      row.ondblclick = (e) => {
+        e.stopPropagation();
+        if (hasChildren || isFolder) {
+          if (expandedNodeIds.has(item.id)) expandedNodeIds.delete(item.id);
+          else expandedNodeIds.add(item.id);
+          renderTree();
+        }
+      };
+
+      // Chevron Click: Toggle Expand/Collapse
+      const chevron = document.createElement("span");
+      chevron.className = "tree-chevron";
+      if (hasChildren || isFolder) {
+        chevron.innerText = isExpanded ? "v" : ">";
+        chevron.onclick = (e) => {
+          e.stopPropagation();
+          if (expandedNodeIds.has(item.id)) expandedNodeIds.delete(item.id);
+          else expandedNodeIds.add(item.id);
+          renderTree();
+        };
+      } else {
+        chevron.style.visibility = "hidden";
+      }
+
+      row.appendChild(chevron);
+
+      // Icon Display
+      if (inlineIconItemId === item.id) {
+        const inlineIconInput = document.createElement("input");
+        inlineIconInput.type = "text";
+        inlineIconInput.className = "inline-icon-input";
+        inlineIconInput.value = item.icon || "p";
+
+        let isIconSaved = false;
+        const commitIcon = async () => {
+          if (isIconSaved) return;
+          isIconSaved = true;
+          await saveInlineIcon(item.id, inlineIconInput.value);
+        };
+
+        inlineIconInput.onkeydown = (e) => {
+          e.stopPropagation();
+          if (e.key === "Enter") commitIcon();
+          else if (e.key === "Escape") { isIconSaved = true; cancelInlineIcon(); }
+        };
+
+        inlineIconInput.onblur = commitIcon;
+        inlineIconInput.onclick = (e) => e.stopPropagation();
+
+        row.appendChild(inlineIconInput);
+        setTimeout(() => { inlineIconInput.focus(); inlineIconInput.select(); }, 10);
+      } else {
+        const icon = document.createElement("span");
+        icon.className = "tree-icon";
+        
+        if (isFolder) {
+          icon.innerText = "📁";
+          if (customColor) icon.style.color = customColor;
+        } else {
+          const customIcon = item.icon || "p";
+          if (customIcon.length === 1 && customIcon.match(/[a-zA-Z0-9]/)) {
+            icon.innerText = `[${customIcon}]`;
+          } else {
+            icon.innerText = customIcon; // Bracketless custom icon / emoji
+            icon.classList.add("colored-icon");
+          }
+          if (customColor) icon.style.color = customColor;
+        }
+
+        row.appendChild(icon);
+      }
+
+      // Title or Inline Rename Input
+      if (inlineEditingItemId === item.id) {
+        const inlineInput = document.createElement("input");
+        inlineInput.type = "text";
+        inlineInput.className = "inline-rename-input";
+        inlineInput.value = item.title || "";
+        
+        let isSaved = false;
+        const commitSave = async () => {
+          if (isSaved) return;
+          isSaved = true;
+          await saveInlineRename(item.id, inlineInput.value);
+        };
+
+        inlineInput.onkeydown = (e) => {
+          e.stopPropagation();
+          if (e.key === "Enter") commitSave();
+          else if (e.key === "Escape") { isSaved = true; cancelInlineRename(); }
+        };
+
+        inlineInput.onblur = commitSave;
+        inlineInput.onclick = (e) => e.stopPropagation();
+
+        row.appendChild(inlineInput);
+        setTimeout(() => { inlineInput.focus(); inlineInput.select(); }, 10);
+      } else {
+        const title = document.createElement("span");
+        title.className = "tree-title";
+        title.innerText = item.title || "Untitled";
+        if (customColor && !isActive) {
+          title.style.color = customColor;
+        }
+        row.appendChild(title);
+      }
+
+      nodeContainer.appendChild(row);
+
+      // Render Children Sub-tree
+      if (hasChildren && searchQuery.trim() === "") {
+        const childrenContainer = document.createElement("div");
+        childrenContainer.className = `tree-children ${isExpanded ? '' : 'collapsed'}`;
+        children.forEach(child => {
+          childrenContainer.appendChild(createTreeNodeElement(child, depth + 1));
+        });
+        nodeContainer.appendChild(childrenContainer);
+      }
+
+      return nodeContainer;
+    }
+
+    // Context Menu Handlers & Viewport Anchoring
+    function openContextMenu(e, id) {
+      if (!userProfile || !userProfile.approved) return;
+
+      if (!selectedItemIds.has(id)) {
+        selectedItemIds.clear();
+        selectedItemIds.add(id);
+        activeItemId = id;
+        renderTree();
+        renderActiveItem();
+      }
+
+      contextTargetId = id;
+      const isMulti = selectedItemIds.size > 1;
+      const item = itemsList.find(i => i.id === id);
+
+      const ctxIconItem = document.getElementById("ctx-icon-item");
+      const ctxColorItem = document.getElementById("ctx-color-item");
+      const ctxRenameItem = document.querySelector(".context-menu-item[onclick*='rename']");
+
+      if (ctxRenameItem) {
+        if (isMulti) ctxRenameItem.classList.add("hidden");
+        else ctxRenameItem.classList.remove("hidden");
+      }
+
+      if (!isMulti && item && item.type === "folder") {
+        ctxIconItem.classList.add("hidden");
+        ctxColorItem.classList.remove("hidden");
+      } else if (!isMulti) {
+        ctxIconItem.classList.remove("hidden");
+        ctxColorItem.classList.add("hidden");
+      } else {
+        ctxIconItem.classList.remove("hidden");
+        ctxColorItem.classList.remove("hidden");
+      }
+
+      elContextMenu.style.display = "block";
+      elContextMenu.classList.remove("hidden");
+
+      const menuWidth = elContextMenu.offsetWidth || 160;
+      const menuHeight = elContextMenu.offsetHeight || 180;
+      const winWidth = window.innerWidth;
+      const winHeight = window.innerHeight;
+
+      let left = e.clientX;
+      let top = e.clientY;
+
+      if (left + menuWidth > winWidth) {
+        left = Math.max(10, winWidth - menuWidth - 10);
+      }
+
+      if (top + menuHeight > winHeight) {
+        top = Math.max(10, top - menuHeight); // Anchor from bottom upwards
+      }
+
+      elContextMenu.style.left = `${left}px`;
+      elContextMenu.style.top = `${top}px`;
+    }
+
+    function closeContextMenu() {
+      elContextMenu.classList.add("hidden");
+      contextTargetId = null;
+    }
+
+    async function handleContextAction(action) {
+      const targetId = contextTargetId;
+      closeContextMenu();
+      if (!targetId || !userProfile || !userProfile.approved) return;
+
+      const targetIds = selectedItemIds.has(targetId) ? Array.from(selectedItemIds) : [targetId];
+
+      if (action === "icon") {
+        inlineIconItemId = targetId;
+        renderTree();
+      } else if (action === "color") {
+        const item = itemsList.find(i => i.id === targetId);
+        elColorInput.value = (item && item.color) ? item.color : "#3b82f6";
+        toggleColorModal(true);
+      } else if (action === "rename") {
+        inlineEditingItemId = targetId;
+        renderTree();
+      } else if (action === "delete") {
+        deleteItemsByIds(targetIds);
+      } else if (action === "subpage") {
+        createNewItem('page', targetId);
+      } else if (action === "subfolder") {
+        createNewItem('folder', targetId);
+      }
+    }
+
+    async function saveInlineRename(id, newTitle) {
+      inlineEditingItemId = null;
+      const trimmed = newTitle.trim();
+      if (trimmed !== "") {
+        try {
+          await db.collection("pages").doc(id).update({
+            title: trimmed,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: getUserDisplayName(userProfile)
+          });
+          showToast("Renamed successfully");
+        } catch (err) {
+          console.error("Rename error:", err);
+          showToast("Error renaming item");
+        }
+      } else {
+        renderTree();
+      }
+    }
+
+    function cancelInlineRename() {
+      inlineEditingItemId = null;
+      renderTree();
+    }
+
+    async function saveInlineIcon(id, newIcon) {
+      inlineIconItemId = null;
+      const trimmed = newIcon.trim();
+      const targetIds = selectedItemIds.has(id) ? Array.from(selectedItemIds) : [id];
+
+      try {
+        const batch = db.batch();
+        targetIds.forEach(tId => {
+          batch.update(db.collection("pages").doc(tId), {
+            icon: trimmed || 'p',
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: getUserDisplayName(userProfile)
+          });
+        });
+        await batch.commit();
+        showToast("Icon updated");
+      } catch (err) {
+        console.error("Icon update error:", err);
+        showToast("Error updating icon");
+      }
+    }
+
+    function cancelInlineIcon() {
+      inlineIconItemId = null;
+      renderTree();
+    }
+
+    function toggleColorModal(show) {
+      if (show) {
+        elColorModal.classList.remove("hidden");
+      } else {
+        elColorModal.classList.add("hidden");
+      }
+    }
+
+    function setPresetColor(hex) {
+      elColorInput.value = hex || "#ffffff";
+      saveFolderColor(hex);
+    }
+
+    async function saveFolderColor(overrideHex = undefined) {
+      if (!contextTargetId) return;
+      const newColor = overrideHex !== undefined ? overrideHex : elColorInput.value;
+      const targetIds = selectedItemIds.has(contextTargetId) ? Array.from(selectedItemIds) : [contextTargetId];
+
+      try {
+        const batch = db.batch();
+        targetIds.forEach(tId => {
+          batch.update(db.collection("pages").doc(tId), { color: newColor });
+        });
+        await batch.commit();
+        showToast("Color updated");
+        toggleColorModal(false);
+      } catch(err) {
+        console.error("Save color error:", err);
+        showToast("Error saving color");
+      }
+    }
+
+    // Delete Logic
+    function deleteItemsByIds(ids) {
+      if (!userProfile || !userProfile.approved || !ids || ids.length === 0) return;
+
+      itemToDeleteId = ids[0];
+      const msgEl = document.getElementById("delete-modal-msg");
+      
+      if (ids.length > 1) {
+        msgEl.innerHTML = `Are you sure you want to delete <strong>${ids.length} selected items</strong>? Sub-items will move to Root level.`;
+      } else {
+        const item = itemsList.find(i => i.id === ids[0]);
+        msgEl.innerHTML = `Are you sure you want to delete <strong>"${escapeHtml(item ? item.title : 'Item')}"</strong>? This action cannot be undone.`;
+      }
+
+      toggleDeleteModal(true);
+    }
+
+    function toggleDeleteModal(show) {
+      const modal = document.getElementById("delete-modal");
+      if (show) modal.classList.remove("hidden");
+      else modal.classList.add("hidden");
+    }
+
+    async function confirmDeleteItem() {
+      if (!userProfile || !userProfile.approved) return;
+      const ids = selectedItemIds.size > 0 ? Array.from(selectedItemIds) : [itemToDeleteId];
+      if (ids.length === 0) return;
+
+      try {
+        const batch = db.batch();
+        ids.forEach(id => {
+          const children = itemsList.filter(i => i.parentId === id);
+          children.forEach(child => {
+            batch.update(db.collection("pages").doc(child.id), { parentId: null });
+          });
+          batch.delete(db.collection("pages").doc(id));
+        });
+        await batch.commit();
+
+        selectedItemIds.clear();
+        activeItemId = null;
+        showToast("Items deleted");
+      } catch (err) {
+        console.error("Delete error:", err);
+        showToast("Error deleting items");
+      } finally {
+        toggleDeleteModal(false);
+      }
+    }
+
+    function escapeHtml(str) {
+      return (str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    // Drag and Drop Logic
+    function handleDragStart(e, id) {
+      if (currentMode !== "edit") return;
+      draggedItemId = id;
+      e.dataTransfer.setData("text/plain", id);
+      e.dataTransfer.effectAllowed = "move";
+    }
+
+    function handleDragOver(e, id) {
+      if (currentMode !== "edit") return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (draggedItemId === id || isDescendant(draggedItemId, id)) return;
+
+      dragOverTargetId = id;
+      const targetRow = e.currentTarget;
+      const rect = targetRow.getBoundingClientRect();
+      const offsetY = e.clientY - rect.top;
+      const height = rect.height;
+
+      targetRow.classList.remove("drag-over-inside", "drag-over-above", "drag-over-below");
+
+      if (offsetY < height * 0.25) {
+        dragPosition = "above";
+        targetRow.classList.add("drag-over-above");
+      } else if (offsetY > height * 0.75) {
+        dragPosition = "below";
+        targetRow.classList.add("drag-over-below");
+      } else {
+        dragPosition = "inside";
+        targetRow.classList.add("drag-over-inside");
+      }
+    }
+
+    function handleDragLeave(e, id) {
+      e.preventDefault();
+      const targetRow = e.currentTarget;
+      targetRow.classList.remove("drag-over-inside", "drag-over-above", "drag-over-below");
+    }
+
+    async function handleDrop(e, targetId) {
+      if (currentMode !== "edit") return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const itemsToMove = selectedItemIds.has(draggedItemId) ? Array.from(selectedItemIds) : [draggedItemId];
+      if (itemsToMove.includes(targetId)) {
+        handleDragEnd();
+        return;
+      }
+
+      const targetItem = itemsList.find(i => i.id === targetId);
+      if (!targetItem) { handleDragEnd(); return; }
+
+      try {
+        const batch = db.batch();
+        let newParentId = dragPosition === "inside" ? targetId : targetItem.parentId;
+
+        itemsToMove.forEach((mId, index) => {
+          batch.update(db.collection("pages").doc(mId), {
+            parentId: newParentId,
+            order: index
+          });
+        });
+
+        await batch.commit();
+        showToast(`Moved items`);
+      } catch (err) {
+        console.error("Drop error:", err);
+      }
+
+      handleDragEnd();
+    }
+
+    function handleRootDragOver(e) {
+      if (currentMode !== "edit") return;
+      e.preventDefault();
+      dragPosition = "root";
+    }
+
+    async function handleRootDrop(e) {
+      if (currentMode !== "edit" || !draggedItemId) return;
+      e.preventDefault();
+
+      const itemsToMove = selectedItemIds.has(draggedItemId) ? Array.from(selectedItemIds) : [draggedItemId];
+
+      try {
+        const batch = db.batch();
+        itemsToMove.forEach((mId, idx) => {
+          batch.update(db.collection("pages").doc(mId), {
+            parentId: null,
+            order: idx
+          });
+        });
+        await batch.commit();
+        showToast("Moved items to Root level");
+      } catch (err) {
+        console.error("Root drop error:", err);
+      }
+
+      handleDragEnd();
+    }
+
+    function handleDragEnd() {
+      draggedItemId = null;
+      dragOverTargetId = null;
+      dragPosition = null;
+      document.querySelectorAll(".tree-row").forEach(el => {
+        el.classList.remove("drag-over-inside", "drag-over-above", "drag-over-below");
+      });
+    }
+
+    function isDescendant(parentId, childId) {
+      let current = itemsList.find(i => i.id === childId);
+      while (current && current.parentId) {
+        if (current.parentId === parentId) return true;
+        current = itemsList.find(i => i.id === current.parentId);
+      }
+      return false;
+    }
+
+    // EDITOR AREA & RENDERER
+    function renderActiveItem() {
+      if (itemsList.length === 0 || !activeItemId) {
+        elMainEditor.classList.add("hidden");
+        elEmptyWorkspace.classList.remove("hidden");
+        return;
+      }
+
+      elMainEditor.classList.remove("hidden");
+      elEmptyWorkspace.classList.add("hidden");
+
+      const item = itemsList.find(i => i.id === activeItemId);
+      if (!item) return;
+
+      renderBreadcrumbs(item);
+
+      if (document.activeElement !== elItemTitle) {
+        elItemTitle.value = item.title || "";
+      }
+
+      const isFolder = item.type === "folder";
+      elEditorTypeBadge.innerText = isFolder ? "Folder" : "Page";
+      elEditorAuthor.innerText = `Author: ${item.updatedBy || 'Unknown'}`;
+
+      const canEdit = userProfile && userProfile.approved;
+      const isEditing = canEdit && currentMode === "edit";
+
+      elItemTitle.disabled = !isEditing;
+
+      renderTagAndAliasChips(item, isEditing);
+      updateStatsBar(item.content || "");
+
+      if (isFolder) {
+        elItemContent.classList.add("hidden");
+        elRenderedView.classList.add("hidden");
+      } else {
+        if (isEditing) {
+          elItemContent.classList.remove("hidden");
+          elRenderedView.classList.add("hidden");
+          if (document.activeElement !== elItemContent) {
+            elItemContent.value = item.content || "";
+          }
+        } else {
+          elItemContent.classList.add("hidden");
+          elRenderedView.classList.remove("hidden");
+          renderFormattedView(item.content || "");
+        }
+      }
+
+      elEditorStatus.innerText = canEdit ? (currentMode === "edit" ? "Editing" : "Viewing") : "Read-Only";
+
+      renderSubitems(item);
+      renderBacklinks(item);
+    }
+
+    function renderTagAndAliasChips(item, isEditing) {
+      const aliases = item.aliases || [];
+      const tags = item.tags || [];
+
+      // Render Aliases
+      elAliasesList.innerHTML = "";
+      aliases.forEach((alias, idx) => {
+        const chip = document.createElement("span");
+        chip.className = "alias-chip";
+        chip.innerHTML = `
+          <span>${escapeHtml(alias)}</span>
+          ${isEditing ? `<button class="remove-chip-btn" onclick="removeAliasChip(${idx})">x</button>` : ''}
+        `;
+        elAliasesList.appendChild(chip);
+      });
+
+      // Render Tags
+      elTagsList.innerHTML = "";
+      tags.forEach((tag, idx) => {
+        const chip = document.createElement("span");
+        chip.className = "tag-chip";
+        chip.innerHTML = `
+          <span>#${escapeHtml(tag)}</span>
+          ${isEditing ? `<button class="remove-chip-btn" onclick="removeTagChip(${idx})">x</button>` : ''}
+        `;
+        chip.onclick = (e) => {
+          if (!e.target.classList.contains("remove-chip-btn")) {
+            document.getElementById("search-input").value = `#${tag}`;
+            handleSearchInput();
+          }
+        };
+        elTagsList.appendChild(chip);
+      });
+
+      if (isEditing) {
+        elAddAliasBtn.classList.remove("hidden");
+        elAddTagBtn.classList.remove("hidden");
+      } else {
+        elAddAliasBtn.classList.add("hidden");
+        elAddTagBtn.classList.add("hidden");
+        elAddAliasInput.classList.add("hidden");
+        elAddTagInput.classList.add("hidden");
+      }
+    }
+
+    function showAddAliasInput() {
+      elAddAliasBtn.classList.add("hidden");
+      elAddAliasInput.classList.remove("hidden");
+      elAddAliasInput.value = "";
+      elAddAliasInput.focus();
+    }
+
+    function showAddTagInput() {
+      elAddTagBtn.classList.add("hidden");
+      elAddTagInput.classList.remove("hidden");
+      elAddTagInput.value = "";
+      elAddTagInput.focus();
+    }
+
+    function handleAliasInputKey(e) {
+      if (e.key === "Enter") { e.preventDefault(); commitNewAlias(); }
+      else if (e.key === "Escape") { elAddAliasInput.classList.add("hidden"); elAddAliasBtn.classList.remove("hidden"); }
+    }
+
+    function handleTagInputKey(e) {
+      if (e.key === "Enter") { e.preventDefault(); commitNewTag(); }
+      else if (e.key === "Escape") { elAddTagInput.classList.add("hidden"); elAddTagBtn.classList.remove("hidden"); }
+    }
+
+    async function commitNewAlias() {
+      if (!activeItemId) return;
+      const item = itemsList.find(i => i.id === activeItemId);
+      if (!item) return;
+
+      const val = elAddAliasInput.value.trim();
+      elAddAliasInput.classList.add("hidden");
+      elAddAliasBtn.classList.remove("hidden");
+
+      if (val) {
+        const updated = [...(item.aliases || []), val];
+        await updateDocumentChips(item.id, { aliases: updated });
+      }
+    }
+
+    async function commitNewTag() {
+      if (!activeItemId) return;
+      const item = itemsList.find(i => i.id === activeItemId);
+      if (!item) return;
+
+      const val = elAddTagInput.value.trim().replace(/^#/, '');
+      elAddTagInput.classList.add("hidden");
+      elAddTagBtn.classList.remove("hidden");
+
+      if (val) {
+        const updated = [...(item.tags || []), val];
+        await updateDocumentChips(item.id, { tags: updated });
+      }
+    }
+
+    async function removeAliasChip(idx) {
+      if (!activeItemId) return;
+      const item = itemsList.find(i => i.id === activeItemId);
+      if (!item) return;
+
+      const updated = [...(item.aliases || [])];
+      updated.splice(idx, 1);
+      await updateDocumentChips(item.id, { aliases: updated });
+    }
+
+    async function removeTagChip(idx) {
+      if (!activeItemId) return;
+      const item = itemsList.find(i => i.id === activeItemId);
+      if (!item) return;
+
+      const updated = [...(item.tags || [])];
+      updated.splice(idx, 1);
+      await updateDocumentChips(item.id, { tags: updated });
+    }
+
+    async function updateDocumentChips(id, patch) {
+      try {
+        await db.collection("pages").doc(id).update({
+          ...patch,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: getUserDisplayName(userProfile)
+        });
+      } catch (err) {
+        console.error("Chip update error:", err);
+      }
+    }
+
+    function updateStatsBar(content) {
+      const text = content || "";
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      const chars = text.length;
+      const readTime = Math.max(1, Math.ceil(words / 200));
+
+      elStatsBar.innerText = `${words} words • ${chars} chars • ${readTime} min read`;
+    }
+
+    // Auto-Save Handler to Firestore
+    function handleEditorInput() {
+      const canEdit = userProfile && userProfile.approved;
+      if (!canEdit || !activeItemId || currentMode === "view") return;
+
+      const newContent = elItemContent.value;
+      updateStatsBar(newContent);
+      elEditorStatus.innerText = "Saving...";
+      clearTimeout(saveTimeout);
+
+      saveTimeout = setTimeout(async () => {
+        try {
+          const item = itemsList.find(i => i.id === activeItemId);
+          if (!item) return;
+          await db.collection("pages").doc(activeItemId).update({
+            title: elItemTitle.value,
+            content: item.type === "folder" ? "" : newContent,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: getUserDisplayName(userProfile)
+          });
+          elEditorStatus.innerText = "Saved";
+        } catch (err) {
+          console.error("Save error:", err);
+          elEditorStatus.innerText = "Save failed";
+        }
+      }, 400);
+    }
+
+    // Render Formatted View Mode
+    function renderFormattedView(content) {
+      if (!content) {
+        elRenderedView.innerHTML = '<em style="color:#888;">(Empty page)</em>';
+        return;
+      }
+
+      let html = "";
+      const lines = (content || "").split('\n');
+
+      lines.forEach((line, lineIdx) => {
+        let processed = escapeHtml(line);
+
+        // Parse [[Wiki Links]]
+        processed = processed.replace(/\[\[(.*?)\]\]/g, (match, p1) => {
+          const pageTitle = p1.trim();
+          return `<span class="wiki-link" onclick="navigateToPageByTitle('${escapeHtmlAttr(pageTitle)}')">[[${pageTitle}]]</span>`;
+        });
+
+        // Parse Checklists
+        if (/^\s*(-|\*|\d+\.)?\s*\[ \]/.test(line)) {
+          const checkText = processed.replace(/^\s*(-|\*|\d+\.)?\s*\[ \]\s*/, '');
+          html += `<div class="checklist-row"><input type="checkbox" onchange="toggleChecklistLine(${lineIdx}, true)" /> <span>${checkText}</span></div>`;
+        } else if (/^\s*(-|\*|\d+\.)?\s*\[x\]/i.test(line)) {
+          const checkText = processed.replace(/^\s*(-|\*|\d+\.)?\s*\[x\]\s*/i, '');
+          html += `<div class="checklist-row checked"><input type="checkbox" checked onchange="toggleChecklistLine(${lineIdx}, false)" /> <del style="color:#888;">${checkText}</del></div>`;
+        } else if (/^#\s+(.*)/.test(line)) {
+          html += `<h1 style="font-size: 18px; font-weight:700; margin: 12px 0 6px 0; border-bottom: 1px solid #eee; padding-bottom: 4px;">${processed.replace(/^#\s+/, '')}</h1>`;
+        } else if (/^##\s+(.*)/.test(line)) {
+          html += `<h2 style="font-size: 15px; font-weight:700; margin: 10px 0 4px 0;">${processed.replace(/^##\s+/, '')}</h2>`;
+        } else if (/^>\s+(.*)/.test(line)) {
+          html += `<blockquote style="border-left: 3px solid #111; padding-left: 8px; color: #555; margin: 6px 0;">${processed.replace(/^>\s+/, '')}</blockquote>`;
+        } else {
+          html += `<div style="min-height: 18px; margin-bottom: 4px;">${processed}</div>`;
+        }
+      });
+
+      elRenderedView.innerHTML = html;
+    }
+
+    function escapeHtmlAttr(str) {
+      return (str || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+    }
+
+    async function toggleChecklistLine(lineIdx, checkIt) {
+      if (!userProfile || !userProfile.approved || !activeItemId) return;
+      const item = itemsList.find(i => i.id === activeItemId);
+      if (!item) return;
+
+      const lines = (item.content || "").split('\n');
+      if (lineIdx < 0 || lineIdx >= lines.length) return;
+
+      if (checkIt) lines[lineIdx] = lines[lineIdx].replace('[ ]', '[x]');
+      else lines[lineIdx] = lines[lineIdx].replace(/\[x\]/i, '[ ]');
+
+      const updatedContent = lines.join('\n');
+      item.content = updatedContent;
+      elItemContent.value = updatedContent;
+      renderFormattedView(updatedContent);
+      updateStatsBar(updatedContent);
+
+      try {
+        await db.collection("pages").doc(activeItemId).update({
+          content: updatedContent,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: getUserDisplayName(userProfile)
+        });
+        showToast("Checklist updated");
+      } catch(err) {
+        console.error("Checklist save error:", err);
+      }
+    }
+
+    function navigateToPageByTitle(pageTitle) {
+      const page = itemsList.find(i => 
+        i.title.toLowerCase() === pageTitle.toLowerCase() ||
+        (i.aliases || []).some(a => a.toLowerCase() === pageTitle.toLowerCase())
+      );
+      if (page) {
+        activeItemId = page.id;
+        selectedItemIds.clear();
+        selectedItemIds.add(page.id);
+        updateUserPresence();
+        renderTree();
+        renderActiveItem();
+      } else {
+        showToast(`Page "${pageTitle}" not found`);
+      }
+    }
+
+    // Slash Commands and [[WikiLinks]] Autocomplete
+    function handleEditorKeyup(e) {
+      if (e.key === "Escape") {
+        hideSlashPopup();
+        hideWikilinkPopup();
+        return;
+      }
+
+      const textarea = elItemContent;
+      const val = textarea.value;
+      const caret = textarea.selectionStart;
+      const textBeforeCaret = val.slice(0, caret);
+
+      // Check for WikiLink trigger [[
+      const wikiMatch = textBeforeCaret.match(/\[\[([^\]\n]*)$/);
+      if (wikiMatch) {
+        showWikilinkPopup(wikiMatch[1].toLowerCase());
+        hideSlashPopup();
+        return;
+      } else {
+        hideWikilinkPopup();
+      }
+
+      // Check for Slash Command trigger /
+      const lineBeforeCaret = textBeforeCaret.split('\n').pop();
+      const slashMatch = lineBeforeCaret.match(/(?:^|\s)\/([a-zA-Z0-9]*)$/);
+      if (slashMatch) {
+        showSlashPopup(slashMatch[1].toLowerCase());
+        return;
+      } else {
+        hideSlashPopup();
+      }
+    }
+
+    function showSlashPopup(query) {
+      const matches = SLASH_COMMANDS.filter(c => c.cmd.slice(1).includes(query));
+      if (matches.length === 0) { hideSlashPopup(); return; }
+
+      elSlashPopup.innerHTML = "";
+      matches.forEach(m => {
+        const item = document.createElement("div");
+        item.className = "popup-menu-item";
+        item.innerHTML = `<span><strong>${m.cmd}</strong> — ${m.label}</span>`;
+        item.onclick = (e) => { e.stopPropagation(); applySlashCommand(m.snippet); };
+        elSlashPopup.appendChild(item);
+      });
+
+      elSlashPopup.style.left = `20px`;
+      elSlashPopup.style.top = `60px`;
+      elSlashPopup.classList.remove("hidden");
+    }
+
+    function hideSlashPopup() { elSlashPopup.classList.add("hidden"); }
+
+    function applySlashCommand(snippet) {
+      const textarea = elItemContent;
+      const val = textarea.value;
+      const caret = textarea.selectionStart;
+      const textBefore = val.slice(0, caret);
+      const textAfter = val.slice(caret);
+
+      const newTextBefore = textBefore.replace(/(?:^|\s)\/([a-zA-Z0-9]*)$/, snippet);
+      textarea.value = newTextBefore + textAfter;
+      textarea.selectionStart = textarea.selectionEnd = newTextBefore.length;
+      textarea.focus();
+
+      hideSlashPopup();
+      handleEditorInput();
+    }
+
+    function showWikilinkPopup(query) {
+      const pages = itemsList.filter(i => 
+        i.type === 'page' && (
+          i.title.toLowerCase().includes(query) ||
+          (i.aliases || []).some(a => a.toLowerCase().includes(query))
+        )
+      );
+      if (pages.length === 0) { hideWikilinkPopup(); return; }
+
+      elWikilinkPopup.innerHTML = "";
+      pages.forEach(p => {
+        const item = document.createElement("div");
+        item.className = "popup-menu-item";
+        const aliasText = (p.aliases && p.aliases.length > 0) ? ` <small style="color:#777;">(${p.aliases.join(', ')})</small>` : '';
+        item.innerHTML = `<span>[${p.icon || 'p'}] ${escapeHtml(p.title)}${aliasText}</span>`;
+        item.onclick = (e) => { e.stopPropagation(); applyWikilink(p.title); };
+        elWikilinkPopup.appendChild(item);
+      });
+
+      elWikilinkPopup.style.left = `20px`;
+      elWikilinkPopup.style.top = `60px`;
+      elWikilinkPopup.classList.remove("hidden");
+    }
+
+    function hideWikilinkPopup() { elWikilinkPopup.classList.add("hidden"); }
+
+    function applyWikilink(pageTitle) {
+      const textarea = elItemContent;
+      const val = textarea.value;
+      const caret = textarea.selectionStart;
+      const textBefore = val.slice(0, caret);
+      const textAfter = val.slice(caret);
+
+      const newTextBefore = textBefore.replace(/\[\[([^\]\n]*)$/, `[[${pageTitle}]]`);
+      textarea.value = newTextBefore + textAfter;
+      textarea.selectionStart = textarea.selectionEnd = newTextBefore.length;
+      textarea.focus();
+
+      hideWikilinkPopup();
+      handleEditorInput();
+    }
+
+    function renderBreadcrumbs(item) {
+      elBreadcrumbs.innerHTML = "";
+      const path = [];
+      let curr = item;
+
+      while (curr) {
+        path.unshift(curr);
+        curr = itemsList.find(i => i.id === curr.parentId);
+      }
+
+      const rootSpan = document.createElement("span");
+      rootSpan.className = "breadcrumb-item";
+      rootSpan.innerText = "All Notes";
+      rootSpan.onclick = () => {
+        activeItemId = path[0].id;
+        selectedItemIds.clear();
+        selectedItemIds.add(activeItemId);
+        updateUserPresence();
+        renderTree();
+        renderActiveItem();
+      };
+      elBreadcrumbs.appendChild(rootSpan);
+
+      path.forEach(p => {
+        const sep = document.createElement("span");
+        sep.innerText = " > ";
+        sep.style.color = "#ccc";
+        elBreadcrumbs.appendChild(sep);
+
+        const span = document.createElement("span");
+        span.className = "breadcrumb-item";
+        span.innerText = p.title || "Untitled";
+        span.onclick = () => {
+          activeItemId = p.id;
+          selectedItemIds.clear();
+          selectedItemIds.add(activeItemId);
+          updateUserPresence();
+          renderTree();
+          renderActiveItem();
+        };
+        elBreadcrumbs.appendChild(span);
+      });
+    }
+
+    function renderSubitems(parentItem) {
+      const children = itemsList
+        .filter(i => i.parentId === parentItem.id)
+        .sort((a, b) => a.order - b.order);
+
+      if (children.length === 0) {
+        elSubitemsSection.classList.add("hidden");
+        return;
+      }
+
+      elSubitemsSection.classList.remove("hidden");
+      elSubitemsTitle.innerText = parentItem.type === "folder" ? "Folder Contents" : "Sub-Pages & Nested Items";
+      elSubitemsGrid.innerHTML = "";
+
+      children.forEach(child => {
+        const card = document.createElement("div");
+        card.className = "subitem-card";
+        const iconDisplay = child.type === 'folder' ? '📁' : `[${child.icon || 'p'}]`;
+        card.innerHTML = `
+          <span>${iconDisplay}</span>
+          <span style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(child.title || 'Untitled')}</span>
+        `;
+        card.onclick = () => {
+          activeItemId = child.id;
+          selectedItemIds.clear();
+          selectedItemIds.add(child.id);
+          updateUserPresence();
+          expandedNodeIds.add(parentItem.id);
+          renderTree();
+          renderActiveItem();
+        };
+        elSubitemsGrid.appendChild(card);
+      });
+    }
+
+    function renderBacklinks(currentItem) {
+      if (!currentItem || currentItem.type !== 'page') {
+        elBacklinksSection.classList.add("hidden");
+        return;
+      }
+
+      const title = (currentItem.title || "").trim().toLowerCase();
+      const aliases = (currentItem.aliases || []).map(a => a.toLowerCase());
+
+      if (!title && aliases.length === 0) {
+        elBacklinksSection.classList.add("hidden");
+        return;
+      }
+
+      const backlinks = itemsList.filter(item => {
+        if (item.id === currentItem.id) return false;
+        const content = (item.content || "").toLowerCase();
+        const matchesTitle = title && (content.includes(`[[${title}]]`) || content.includes(title));
+        const matchesAlias = aliases.some(alias => content.includes(`[[${alias}]]`) || content.includes(alias));
+        return matchesTitle || matchesAlias;
+      });
+
+      if (backlinks.length === 0) {
+        elBacklinksSection.classList.add("hidden");
+        return;
+      }
+
+      elBacklinksSection.classList.remove("hidden");
+      elBacklinksGrid.innerHTML = "";
+
+      backlinks.forEach(bl => {
+        const card = document.createElement("div");
+        card.className = "subitem-card";
+        card.innerHTML = `
+          <span>[${bl.icon || 'p'}]</span>
+          <span style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(bl.title)}</span>
+        `;
+        card.onclick = () => {
+          activeItemId = bl.id;
+          selectedItemIds.clear();
+          selectedItemIds.add(bl.id);
+          updateUserPresence();
+          renderTree();
+          renderActiveItem();
+        };
+        elBacklinksGrid.appendChild(card);
+      });
+    }
+
+    // Item Creation Actions
+    async function createNewItem(type = 'page', targetParentId = null) {
+      if (!userProfile || !userProfile.approved) {
+        showToast("Cannot create: Account pending approval.");
+        return;
+      }
+
+      const parentId = targetParentId;
+      const siblings = itemsList.filter(i => i.parentId === parentId);
+      const nextOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.order)) + 1 : 0;
+
+      try {
+        const docRef = await db.collection("pages").add({
+          title: type === 'folder' ? "New Folder" : "Untitled Page",
+          content: "",
+          tags: [],
+          aliases: [],
+          type: type,
+          icon: type === 'folder' ? 'f' : 'p',
+          color: null,
+          parentId: parentId,
+          order: nextOrder,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: getUserDisplayName(userProfile)
+        });
+
+        if (parentId) expandedNodeIds.add(parentId);
+        activeItemId = docRef.id;
+        selectedItemIds.clear();
+        selectedItemIds.add(activeItemId);
+        updateUserPresence();
+        showToast(`Created new ${type}`);
+      } catch (err) {
+        console.error("Create item error:", err);
+        showToast("Error creating item");
+      }
+    }
+
+    function toggleCollapseAll() {
+      expandedNodeIds.clear();
+      renderTree();
+    }
+
+    function handleSearchInput() {
+      searchQuery = document.getElementById("search-input").value;
+      renderTree();
+    }
+
+    // AUTHENTICATION, PROFILE & ADMIN MODAL HANDLERS
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      elAuthError.classList.add("hidden");
+
+      const email = elAuthEmail.value.trim();
+      const password = elAuthPassword.value;
+      const username = elAuthUsername.value.trim();
+
+      try {
+        if (isRegisterMode) {
+          const usersSnap = await db.collection("users").get();
+          const isFirstUser = usersSnap.empty;
+
+          const cred = await auth.createUserWithEmailAndPassword(email, password);
+          
+          await db.collection("users").doc(cred.user.uid).set({
+            email: email,
+            displayName: username || email.split("@")[0],
+            color: "#3b82f6",
+            approved: isFirstUser ? true : false,
+            isAdmin: isFirstUser ? true : false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          if (isFirstUser) showToast("Registered! Granted ADMIN privileges.");
+          else showToast("Registered! Account is pending admin greenlight.");
+        } else {
+          await auth.signInWithEmailAndPassword(email, password);
+          showToast("Signed in successfully");
+        }
+        toggleAuthModal(false);
+      } catch (err) {
+        console.error("Auth error:", err);
+        elAuthError.innerText = err.message || "Authentication failed";
+        elAuthError.classList.remove("hidden");
+      }
+    }
+
+    function handleSignOut() {
+      removeUserPresence();
+      auth.signOut();
+      hideProfileDropdown();
+      showToast("Signed out");
+    }
+
+    function toggleAuthModal(show) {
+      if (show) {
+        isRegisterMode = false;
+        elAuthModalTitle.innerText = "Sign In";
+        elUsernameGroup.classList.add("hidden");
+        elAuthSubmitBtn.innerText = "Sign In";
+        elAuthToggleBtn.innerText = "Switch to Register";
+        elAuthError.classList.add("hidden");
+        elAuthModal.classList.remove("hidden");
+      } else {
+        elAuthModal.classList.add("hidden");
+      }
+    }
+
+    function toggleAuthMode() {
+      isRegisterMode = !isRegisterMode;
+      if (isRegisterMode) {
+        elAuthModalTitle.innerText = "Register Account";
+        elUsernameGroup.classList.remove("hidden");
+        elAuthSubmitBtn.innerText = "Register";
+        elAuthToggleBtn.innerText = "Switch to Sign In";
+      } else {
+        elAuthModalTitle.innerText = "Sign In";
+        elUsernameGroup.classList.add("hidden");
+        elAuthSubmitBtn.innerText = "Sign In";
+        elAuthToggleBtn.innerText = "Switch to Register";
+      }
+    }
+
+    function toggleProfileModal(show) {
+      hideProfileDropdown();
+      if (show) {
+        if (userProfile) {
+          elProfileUsername.value = getUserDisplayName(userProfile);
+          elProfileColorInput.value = getProfileColor(userProfile);
+        }
+        elProfileModal.classList.remove("hidden");
+      } else {
+        elProfileModal.classList.add("hidden");
+      }
+    }
+
+    function setProfilePresetColor(hex) {
+      elProfileColorInput.value = hex;
+    }
+
+    async function handleProfileSubmit(e) {
+      e.preventDefault();
+      if (!firebaseUser) return;
+
+      const newName = elProfileUsername.value.trim();
+      const newColor = elProfileColorInput.value;
+      if (!newName) return;
+
+      try {
+        await db.collection("users").doc(firebaseUser.uid).update({
+          displayName: newName,
+          color: newColor
+        });
+        showToast("Profile updated");
+        toggleProfileModal(false);
+        updateUserPresence();
+      } catch (err) {
+        console.error("Profile update error:", err);
+        showToast("Error updating profile");
+      }
+    }
+
+    function toggleAdminModal(show) {
+      hideProfileDropdown();
+      if (show) {
+        elAdminModal.classList.remove("hidden");
+      } else {
+        elAdminModal.classList.add("hidden");
+      }
+    }
+
+    function renderAdminTable(users) {
+      if (!elAdminUserRows) return;
+      elAdminUserRows.innerHTML = "";
+      if (!users || users.length === 0) {
+        elAdminUserRows.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#888;">No registered users found.</td></tr>`;
+        return;
+      }
+
+      users.forEach(u => {
+        const tr = document.createElement("tr");
+        const displayName = u.displayName || u.email.split("@")[0];
+
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(displayName)}</strong></td>
+          <td>${escapeHtml(u.email || u.uid)}</td>
+          <td>${u.isAdmin ? 'Admin' : 'Player'}</td>
+          <td>
+            <span class="status-badge ${u.approved ? 'status-approved' : 'status-pending'}">
+              ${u.approved ? 'APPROVED' : 'PENDING'}
+            </span>
+          </td>
+          <td>
+            <button onclick="toggleUserApproval('${u.uid}', ${u.approved})">
+              ${u.approved ? 'Revoke Access' : 'Approve / Greenlight'}
+            </button>
+          </td>
+        `;
+        elAdminUserRows.appendChild(tr);
+      });
+    }
+
+    async function toggleUserApproval(uid, currentStatus) {
+      try {
+        await db.collection("users").doc(uid).update({
+          approved: !currentStatus
+        });
+        showToast("User status updated");
+      } catch (err) {
+        console.error("Update approval error:", err);
+        showToast("Failed to update status");
+      }
+    }
+
+    function showToast(msg) {
+      elToast.innerText = msg;
+      elToast.classList.remove("hidden");
+      setTimeout(() => elToast.classList.add("hidden"), 3000);
+    }
+  </script>
+</body>
+</html>

@@ -245,10 +245,16 @@
       margin-right: 6px;
       font-size: 12px;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      opacity: 0.8;
       display: inline-block;
-      width: 20px;
+      min-width: 20px;
       text-align: center;
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+
+    /* Recolor custom page icons / text to match document colors */
+    .tree-icon.colored-icon {
+      filter: contrast(120%) saturate(150%);
     }
 
     .tree-title {
@@ -256,6 +262,84 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    /* Google-Style User Avatar Circle */
+    .user-avatar-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      color: #ffffff;
+      font-weight: 700;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      flex-shrink: 0;
+      user-select: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+
+    .tree-presence-group {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      margin-left: 6px;
+    }
+
+    /* Top Right Profile Dropdown Menu */
+    .profile-dropdown-container {
+      position: relative;
+    }
+
+    .profile-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .profile-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 4px;
+      background-color: #ffffff;
+      border: 1px solid #111111;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-radius: 4px;
+      z-index: 1000;
+      min-width: 170px;
+      padding: 4px 0;
+    }
+
+    .dropdown-item {
+      padding: 8px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      color: #111111;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dropdown-item:hover {
+      background-color: #f0f0f0;
+    }
+
+    .dropdown-item.danger {
+      color: #c53030;
+    }
+
+    .dropdown-item.danger:hover {
+      background-color: #fff5f5;
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background-color: #e0e0e0;
+      margin: 4px 0;
     }
 
     .inline-rename-input {
@@ -748,16 +832,30 @@
     </div>
 
     <div class="user-actions">
-      <span id="user-display" class="status-badge">Not Signed In</span>
-      <span id="approval-badge" class="status-badge status-pending hidden">Pending Approval</span>
-      
       <!-- Editing / Viewing Mode Switch Button -->
       <button id="mode-toggle-btn" onclick="toggleViewMode()">[Editing]</button>
       
-      <button id="profile-btn" class="hidden" onclick="toggleProfileModal(true)">Profile</button>
-      <button id="admin-btn" class="hidden" onclick="toggleAdminModal(true)">Admin Gatekeeper</button>
+      <!-- Top Right Profile Dropdown Container -->
+      <div id="profile-menu-container" class="profile-dropdown-container hidden">
+        <button id="profile-trigger-btn" class="profile-trigger" onclick="toggleProfileDropdown(event)">
+          <span id="header-username">User</span>
+          <span id="header-avatar-slot"></span>
+        </button>
+        <div id="profile-dropdown" class="profile-dropdown hidden">
+          <div class="dropdown-item" onclick="toggleProfileModal(true)">
+            <span>Profile Settings</span>
+          </div>
+          <div id="dropdown-admin-item" class="dropdown-item hidden" onclick="toggleAdminModal(true)">
+            <span>Admin Gatekeeper</span>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item danger" onclick="handleSignOut()">
+            <span>Sign Out</span>
+          </div>
+        </div>
+      </div>
+
       <button id="auth-btn" onclick="toggleAuthModal(true)">Sign In / Register</button>
-      <button id="signout-btn" class="hidden" onclick="handleSignOut()">Sign Out</button>
     </div>
   </header>
 
@@ -931,7 +1029,7 @@
   <div id="profile-modal" class="modal-overlay hidden">
     <div class="modal">
       <div class="modal-header">
-        <span class="modal-title">User Profile</span>
+        <span class="modal-title">User Profile Settings</span>
         <button onclick="toggleProfileModal(false)">X</button>
       </div>
 
@@ -940,6 +1038,22 @@
           <label>Display Name / Username</label>
           <input type="text" id="profile-username" required placeholder="Enter username..." />
         </div>
+
+        <div class="form-group">
+          <label>Profile Color</label>
+          <input type="color" id="profile-color-input" style="height: 36px; padding: 2px; cursor: pointer; width: 100%;" />
+        </div>
+
+        <div style="font-size: 11px; color: #666; margin-bottom: 8px;">Preset Colors:</div>
+        <div class="preset-row" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
+          <div class="color-swatch" style="width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 1px solid #ccc; background-color: #3b82f6;" onclick="setProfilePresetColor('#3b82f6')"></div>
+          <div class="color-swatch" style="width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 1px solid #ccc; background-color: #10b981;" onclick="setProfilePresetColor('#10b981')"></div>
+          <div class="color-swatch" style="width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 1px solid #ccc; background-color: #f59e0b;" onclick="setProfilePresetColor('#f59e0b')"></div>
+          <div class="color-swatch" style="width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 1px solid #ccc; background-color: #ef4444;" onclick="setProfilePresetColor('#ef4444')"></div>
+          <div class="color-swatch" style="width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 1px solid #ccc; background-color: #8b5cf6;" onclick="setProfilePresetColor('#8b5cf6')"></div>
+          <div class="color-swatch" style="width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 1px solid #ccc; background-color: #ec4899;" onclick="setProfilePresetColor('#ec4899')"></div>
+        </div>
+
         <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
           <button type="button" onclick="toggleProfileModal(false)">Cancel</button>
           <button type="submit" style="background-color: #111; color: #fff;">Save Changes</button>
@@ -1025,6 +1139,7 @@
     let firebaseUser = null;
     let userProfile = null;
     let itemsList = []; // Stores all pages & folders
+    let presenceList = []; // Stores active player presence objects
     let activeItemId = null;
     let expandedNodeIds = new Set();
     let draggedItemId = null;
@@ -1057,10 +1172,12 @@
     const elApprovalBadge = document.getElementById("approval-badge");
     const elPendingBanner = document.getElementById("pending-banner");
     const elModeToggleBtn = document.getElementById("mode-toggle-btn");
-    const elProfileBtn = document.getElementById("profile-btn");
-    const elAdminBtn = document.getElementById("admin-btn");
+    const elProfileMenuContainer = document.getElementById("profile-menu-container");
+    const elProfileDropdown = document.getElementById("profile-dropdown");
+    const elHeaderUsername = document.getElementById("header-username");
+    const elHeaderAvatarSlot = document.getElementById("header-avatar-slot");
+    const elDropdownAdminItem = document.getElementById("dropdown-admin-item");
     const elAuthBtn = document.getElementById("auth-btn");
-    const elSignoutBtn = document.getElementById("signout-btn");
 
     const elTreeContainer = document.getElementById("tree-container");
     const elNewPageBtn = document.getElementById("new-page-btn");
@@ -1101,6 +1218,7 @@
 
     const elProfileModal = document.getElementById("profile-modal");
     const elProfileUsername = document.getElementById("profile-username");
+    const elProfileColorInput = document.getElementById("profile-color-input");
 
     const elAdminModal = document.getElementById("admin-modal");
     const elAdminUserRows = document.getElementById("admin-user-rows");
@@ -1114,11 +1232,19 @@
       initUsersRealtimeListener();
       initPresenceRealtimeListener();
 
-      // Dismiss context menu and popups on external click
-      window.addEventListener("click", () => {
+      // Clean up user presence on tab close or navigation away
+      window.addEventListener("beforeunload", removeUserPresence);
+      window.addEventListener("pagehide", removeUserPresence);
+
+      // Dismiss context menu, dropdowns, and popups on external click
+      window.addEventListener("click", (e) => {
         closeContextMenu();
         hideSlashPopup();
         hideWikilinkPopup();
+
+        if (elProfileDropdown && !e.target.closest("#profile-menu-container")) {
+          elProfileDropdown.classList.add("hidden");
+        }
       });
 
       window.addEventListener("keydown", (e) => {
@@ -1126,6 +1252,7 @@
           closeContextMenu();
           hideSlashPopup();
           hideWikilinkPopup();
+          if (elProfileDropdown) elProfileDropdown.classList.add("hidden");
         }
       });
     });
@@ -1140,6 +1267,13 @@
         return profile.email.split("@")[0];
       }
       return "User";
+    }
+
+    // Helper: Render Google-Style Initial Avatar Circle
+    function renderAvatarCircle(name, color, size = 20) {
+      const initial = (name || "U").trim().charAt(0).toUpperCase();
+      const bgColor = color || "#3b82f6";
+      return `<span class="user-avatar-circle" style="background-color: ${bgColor}; width: ${size}px; height: ${size}px; font-size: ${Math.max(9, Math.floor(size * 0.55))}px;" title="${escapeHtml(name)}">${initial}</span>`;
     }
 
     // Helper: Darken Color for Inherited Child Files
@@ -1184,12 +1318,13 @@
             if (doc.exists) {
               userProfile = { uid: user.uid, ...doc.data() };
             } else {
-              userProfile = { uid: user.uid, email: user.email, displayName: "", approved: false, isAdmin: false };
+              userProfile = { uid: user.uid, email: user.email, displayName: "", color: "#3b82f6", approved: false, isAdmin: false };
             }
             updateUserPresence();
             renderUI();
           });
         } else {
+          removeUserPresence();
           userProfile = null;
           renderUI();
         }
@@ -1248,17 +1383,23 @@
       });
     }
 
-    // 4. Realtime Presence Subscription
+    // 4. Realtime Presence Subscription & Cleanup
     function initPresenceRealtimeListener() {
       db.collection("presence").onSnapshot(snapshot => {
-        const activeNames = [];
+        presenceList = [];
         snapshot.forEach(doc => {
           const data = doc.data();
-          if (data.activeItemId === activeItemId && data.name) {
-            activeNames.push(data.name);
+          if (data && data.activeItemId) {
+            presenceList.push({
+              uid: doc.id,
+              name: data.name || "User",
+              color: data.color || "#3b82f6",
+              activeItemId: data.activeItemId
+            });
           }
         });
-        renderPresenceBadges(activeNames);
+        renderTreePresence();
+        renderActiveDocumentPresence();
       });
     }
 
@@ -1267,49 +1408,56 @@
       db.collection("presence").doc(firebaseUser.uid).set({
         name: getUserDisplayName(userProfile),
         email: firebaseUser.email,
+        color: userProfile.color || "#3b82f6",
         activeItemId: activeItemId,
         lastSeen: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
     }
 
-    function renderPresenceBadges(names) {
-      elPresenceContainer.innerHTML = "";
-      if (!names || names.length === 0) return;
+    function removeUserPresence() {
+      if (!firebaseUser) return;
+      try {
+        db.collection("presence").doc(firebaseUser.uid).delete();
+      } catch (err) {
+        console.error("Presence cleanup error:", err);
+      }
+    }
 
-      names.forEach(name => {
-        const badge = document.createElement("span");
-        badge.className = "status-badge";
-        badge.style.backgroundColor = "#e2e8f0";
-        badge.style.borderColor = "#94a3b8";
-        badge.style.color = "#0f172a";
-        badge.title = name;
-        badge.innerText = `[${name}]`;
-        elPresenceContainer.appendChild(badge);
+    function renderActiveDocumentPresence() {
+      elPresenceContainer.innerHTML = "";
+      if (!activeItemId) return;
+
+      const activeUsers = presenceList.filter(p => p.activeItemId === activeItemId);
+      activeUsers.forEach(p => {
+        const wrap = document.createElement("span");
+        wrap.innerHTML = renderAvatarCircle(p.name, p.color, 22);
+        elPresenceContainer.appendChild(wrap);
       });
+    }
+
+    function renderTreePresence() {
+      renderTree();
     }
 
     // Main Render Pipeline
     function renderUI() {
       if (firebaseUser) {
         const name = getUserDisplayName(userProfile);
-        elUserDisplay.innerText = name;
+        const userColor = userProfile ? (userProfile.color || "#3b82f6") : "#3b82f6";
+        
+        elHeaderUsername.innerText = name;
+        elHeaderAvatarSlot.innerHTML = renderAvatarCircle(name, userColor, 22);
+
         elAuthBtn.classList.add("hidden");
-        elProfileBtn.classList.remove("hidden");
-        elSignoutBtn.classList.remove("hidden");
+        elProfileMenuContainer.classList.remove("hidden");
 
         const isApproved = userProfile && userProfile.approved;
         const isAdmin = userProfile && userProfile.isAdmin;
 
         if (isApproved) {
-          elApprovalBadge.innerText = isAdmin ? "Admin / Approved" : "Approved";
-          elApprovalBadge.className = "status-badge status-approved";
-          elApprovalBadge.classList.remove("hidden");
           elPendingBanner.classList.add("hidden");
           elModeToggleBtn.disabled = false;
         } else {
-          elApprovalBadge.innerText = "Pending Greenlight";
-          elApprovalBadge.className = "status-badge status-pending";
-          elApprovalBadge.classList.remove("hidden");
           elPendingBanner.classList.remove("hidden");
           currentMode = "view"; // Lock to View mode if unapproved
           elModeToggleBtn.disabled = true;
@@ -1317,18 +1465,16 @@
         }
 
         if (isAdmin) {
-          elAdminBtn.classList.remove("hidden");
+          elDropdownAdminItem.classList.remove("hidden");
         } else {
-          elAdminBtn.classList.add("hidden");
+          elDropdownAdminItem.classList.add("hidden");
         }
       } else {
-        elUserDisplay.innerText = "Not Signed In";
-        elApprovalBadge.classList.add("hidden");
+        elHeaderUsername.innerText = "Not Signed In";
+        elHeaderAvatarSlot.innerHTML = "";
         elPendingBanner.classList.add("hidden");
-        elAdminBtn.classList.add("hidden");
-        elProfileBtn.classList.add("hidden");
+        elProfileMenuContainer.classList.add("hidden");
         elAuthBtn.classList.remove("hidden");
-        elSignoutBtn.classList.add("hidden");
         currentMode = "view";
         elModeToggleBtn.disabled = true;
         elModeToggleBtn.innerText = "[View Only]";
@@ -1344,6 +1490,11 @@
 
       renderTree();
       renderActiveItem();
+    }
+
+    function toggleProfileDropdown(e) {
+      e.stopPropagation();
+      elProfileDropdown.classList.toggle("hidden");
     }
 
     // View / Edit Mode Switch
@@ -1441,7 +1592,7 @@
         openContextMenu(e, item.id);
       };
 
-      // Single Click: Select Document (Does NOT toggle expansion)
+      // Single Click: Select Document
       row.onclick = (e) => {
         e.stopPropagation();
         activeItemId = item.id;
@@ -1475,33 +1626,9 @@
         chevron.style.visibility = "hidden";
       }
 
-      // Icon (Custom char/emoji with no brackets, or colored SVG folder)
-      const icon = document.createElement("span");
-      icon.className = "tree-icon";
-
-      if (isFolder) {
-        const folderColor = item.color || inheritedColor || "#888888";
-        icon.innerHTML = getFolderIconSvg(folderColor);
-      } else {
-        const customIcon = item.icon && item.icon !== 'p';
-        const displayChar = item.icon || 'p';
-        if (customIcon) {
-          icon.innerText = displayChar;
-        } else {
-          icon.innerText = `[${displayChar}]`;
-        }
-        if (inheritedColor) {
-          icon.style.color = inheritedColor;
-        }
-      }
-
-      if (inheritedColor && isActive) {
-        row.style.borderLeftColor = inheritedColor;
-      }
-
       row.appendChild(chevron);
 
-      // Icon (Custom char/emoji with no brackets, colored SVG folder, or inline editable input)
+      // Icon (Custom char/emoji with color tinting, or colored SVG folder)
       if (inlineEditingIconItemId === item.id) {
         const iconInput = document.createElement("input");
         iconInput.type = "text";
@@ -1546,11 +1673,15 @@
           const displayChar = item.icon || 'p';
           if (customIcon) {
             icon.innerText = displayChar;
+            if (inheritedColor) {
+              icon.style.color = inheritedColor;
+              icon.classList.add("colored-icon");
+            }
           } else {
             icon.innerText = `[${displayChar}]`;
-          }
-          if (inheritedColor) {
-            icon.style.color = inheritedColor;
+            if (inheritedColor) {
+              icon.style.color = inheritedColor;
+            }
           }
         }
         row.appendChild(icon);
@@ -1593,7 +1724,23 @@
         const title = document.createElement("span");
         title.className = "tree-title";
         title.innerText = item.title || "Untitled";
+        if (inheritedColor && !isActive) {
+          title.style.color = inheritedColor;
+        }
         row.appendChild(title);
+      }
+
+      // Render Active User Presence Circle Badges on Sidebar Document Row
+      const activeRowUsers = presenceList.filter(p => p.activeItemId === item.id);
+      if (activeRowUsers.length > 0) {
+        const presenceGrp = document.createElement("div");
+        presenceGrp.className = "tree-presence-group";
+        activeRowUsers.forEach(p => {
+          const avatarWrap = document.createElement("span");
+          avatarWrap.innerHTML = renderAvatarCircle(p.name, p.color, 16);
+          presenceGrp.appendChild(avatarWrap);
+        });
+        row.appendChild(presenceGrp);
       }
 
       nodeContainer.appendChild(row);
@@ -2692,6 +2839,7 @@
           await db.collection("users").doc(cred.user.uid).set({
             email: email,
             displayName: username || email.split("@")[0],
+            color: "#3b82f6",
             approved: isFirstUser ? true : false,
             isAdmin: isFirstUser ? true : false,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2715,7 +2863,9 @@
     }
 
     function handleSignOut() {
+      removeUserPresence();
       auth.signOut();
+      if (elProfileDropdown) elProfileDropdown.classList.add("hidden");
       showToast("Signed out");
     }
 
@@ -2749,9 +2899,11 @@
     }
 
     function toggleProfileModal(show) {
+      if (elProfileDropdown) elProfileDropdown.classList.add("hidden");
       if (show) {
         if (userProfile) {
           elProfileUsername.value = getUserDisplayName(userProfile);
+          elProfileColorInput.value = userProfile.color || "#3b82f6";
         }
         elProfileModal.classList.remove("hidden");
       } else {
@@ -2759,16 +2911,22 @@
       }
     }
 
+    function setProfilePresetColor(hex) {
+      elProfileColorInput.value = hex;
+    }
+
     async function handleProfileSubmit(e) {
       e.preventDefault();
       if (!firebaseUser) return;
 
       const newName = elProfileUsername.value.trim();
+      const newColor = elProfileColorInput.value;
       if (!newName) return;
 
       try {
         await db.collection("users").doc(firebaseUser.uid).update({
-          displayName: newName
+          displayName: newName,
+          color: newColor
         });
         showToast("Profile updated");
         toggleProfileModal(false);
@@ -2780,6 +2938,7 @@
     }
 
     function toggleAdminModal(show) {
+      if (elProfileDropdown) elProfileDropdown.classList.add("hidden");
       if (show) {
         elAdminModal.classList.remove("hidden");
       } else {
@@ -2800,7 +2959,12 @@
         const displayName = u.displayName || u.email.split("@")[0];
 
         tr.innerHTML = `
-          <td><strong>${escapeHtml(displayName)}</strong></td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              ${renderAvatarCircle(displayName, u.color || '#3b82f6', 18)}
+              <strong>${escapeHtml(displayName)}</strong>
+            </div>
+          </td>
           <td>${escapeHtml(u.email || u.uid)}</td>
           <td>${u.isAdmin ? 'Admin' : 'Player'}</td>
           <td>

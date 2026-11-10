@@ -2084,8 +2084,20 @@
       e.preventDefault();
       e.stopPropagation();
 
+      if (!draggedItemId) {
+        handleDragEnd();
+        return;
+      }
+
       const itemsToMove = selectedItemIds.has(draggedItemId) ? Array.from(selectedItemIds) : [draggedItemId];
       if (itemsToMove.includes(targetId)) {
+        handleDragEnd();
+        return;
+      }
+
+      // Cannot move an item inside its own sub-item
+      if (itemsToMove.some(id => isDescendant(id, targetId))) {
+        showToast("Cannot move an item inside its own sub-item.");
         handleDragEnd();
         return;
       }
@@ -2093,21 +2105,44 @@
       const targetItem = itemsList.find(i => i.id === targetId);
       if (!targetItem) { handleDragEnd(); return; }
 
+      let newParentId = null;
+      let siblings = [];
+      let insertIdx = 0;
+
+      if (dragPosition === "inside") {
+        newParentId = targetId;
+        siblings = itemsList
+          .filter(i => i.parentId === newParentId && !itemsToMove.includes(i.id))
+          .sort((a, b) => a.order - b.order);
+        insertIdx = siblings.length;
+        expandedNodeIds.add(targetId);
+      } else {
+        newParentId = targetItem.parentId;
+        siblings = itemsList
+          .filter(i => i.parentId === newParentId && !itemsToMove.includes(i.id))
+          .sort((a, b) => a.order - b.order);
+
+        const targetIdx = siblings.findIndex(s => s.id === targetId);
+        insertIdx = targetIdx === -1 ? siblings.length : (dragPosition === "above" ? targetIdx : targetIdx + 1);
+      }
+
+      const draggedItemsFull = itemsToMove.map(id => itemsList.find(i => i.id === id)).filter(Boolean);
+      siblings.splice(insertIdx, 0, ...draggedItemsFull);
+
       try {
         const batch = db.batch();
-        let newParentId = dragPosition === "inside" ? targetId : targetItem.parentId;
-
-        itemsToMove.forEach((mId, index) => {
-          batch.update(db.collection("pages").doc(mId), {
+        siblings.forEach((sib, index) => {
+          batch.update(db.collection("pages").doc(sib.id), {
             parentId: newParentId,
             order: index
           });
         });
 
         await batch.commit();
-        showToast(`Moved items`);
+        showToast(`Moved item(s)`);
       } catch (err) {
         console.error("Drop error:", err);
+        showToast("Error updating order");
       }
 
       handleDragEnd();
@@ -2125,16 +2160,23 @@
 
       const itemsToMove = selectedItemIds.has(draggedItemId) ? Array.from(selectedItemIds) : [draggedItemId];
 
+      const siblings = itemsList
+        .filter(i => i.parentId === null && !itemsToMove.includes(i.id))
+        .sort((a, b) => a.order - b.order);
+
+      const draggedItemsFull = itemsToMove.map(id => itemsList.find(i => i.id === id)).filter(Boolean);
+      siblings.push(...draggedItemsFull);
+
       try {
         const batch = db.batch();
-        itemsToMove.forEach((mId, idx) => {
-          batch.update(db.collection("pages").doc(mId), {
+        siblings.forEach((sib, index) => {
+          batch.update(db.collection("pages").doc(sib.id), {
             parentId: null,
-            order: idx
+            order: index
           });
         });
         await batch.commit();
-        showToast("Moved items to Root level");
+        showToast("Moved item(s) to Root level");
       } catch (err) {
         console.error("Root drop error:", err);
       }

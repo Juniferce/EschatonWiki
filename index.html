@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Eschaton Wiki</title>
+  <title>THE Eschaton Wiki</title>
   
   <style>
     /* Clean, barebones monochrome aesthetic */
@@ -930,7 +930,10 @@
           <span class="tags-label">Tags:</span>
           <div id="tags-list" class="chip-container"></div>
           <button id="add-tag-btn" class="add-chip-btn" onclick="showAddTagInput()">+ Tag</button>
-          <input type="text" id="add-tag-input" class="add-chip-input hidden" placeholder="Type tag..." onkeydown="handleTagInputKey(event)" onblur="commitNewTag()" />
+          <div style="position: relative; display: inline-flex; align-items: center;">
+            <input type="text" id="add-tag-input" class="add-chip-input hidden" placeholder="Type tag..." oninput="handleTagAutocomplete()" onkeydown="handleTagInputKey(event)" onblur="commitNewTag()" />
+            <div id="tag-autocomplete-popup" class="popup-menu hidden" style="top: 100%; left: 0; min-width: 120px; margin-top: 2px;"></div>
+          </div>
         </div>
       </div>
 
@@ -1208,6 +1211,7 @@
     const elAddTagBtn = document.getElementById("add-tag-btn");
     const elAddAliasInput = document.getElementById("add-alias-input");
     const elAddTagInput = document.getElementById("add-tag-input");
+    const elTagAutocompletePopup = document.getElementById("tag-autocomplete-popup");
 
     const elItemContent = document.getElementById("item-content");
     const elRenderedView = document.getElementById("rendered-view");
@@ -1262,6 +1266,7 @@
         hideProfileDropdown();
         hideSlashPopup();
         hideWikilinkPopup();
+        if (elTagAutocompletePopup) elTagAutocompletePopup.classList.add("hidden");
       });
 
       window.addEventListener("keydown", (e) => {
@@ -1270,6 +1275,7 @@
           hideProfileDropdown();
           hideSlashPopup();
           hideWikilinkPopup();
+          if (elTagAutocompletePopup) elTagAutocompletePopup.classList.add("hidden");
         }
       });
     });
@@ -2043,6 +2049,7 @@
     function handleDragStart(e, id) {
       if (currentMode !== "edit") return;
       draggedItemId = id;
+      draggedTagIdx = null; // Clear tag drag state
       e.dataTransfer.setData("text/plain", id);
       e.dataTransfer.effectAllowed = "move";
     }
@@ -2282,6 +2289,12 @@
           <span>#${escapeHtml(tag)}</span>
           ${isEditing ? `<button class="remove-chip-btn" onclick="removeTagChip(${idx})">x</button>` : ''}
         `;
+        if (isEditing) {
+          chip.draggable = true;
+          chip.ondragstart = (e) => handleTagDragStart(e, idx);
+          chip.ondragover = handleTagDragOver;
+          chip.ondrop = (e) => handleTagDrop(e, idx);
+        }
         chip.onclick = (e) => {
           if (!e.target.classList.contains("remove-chip-btn")) {
             document.getElementById("search-input").value = `#${tag}`;
@@ -2314,6 +2327,7 @@
       elAddTagInput.classList.remove("hidden");
       elAddTagInput.value = "";
       elAddTagInput.focus();
+      handleTagAutocomplete();
     }
 
     function handleAliasInputKey(e) {
@@ -2323,7 +2337,11 @@
 
     function handleTagInputKey(e) {
       if (e.key === "Enter") { e.preventDefault(); commitNewTag(); }
-      else if (e.key === "Escape") { elAddTagInput.classList.add("hidden"); elAddTagBtn.classList.remove("hidden"); }
+      else if (e.key === "Escape") { 
+        elAddTagInput.classList.add("hidden"); 
+        elAddTagBtn.classList.remove("hidden"); 
+        elTagAutocompletePopup.classList.add("hidden");
+      }
     }
 
     async function commitNewAlias() {
@@ -2346,14 +2364,89 @@
       const item = itemsList.find(i => i.id === activeItemId);
       if (!item) return;
 
-      const val = elAddTagInput.value.trim().replace(/^#/, '');
+      const val = elAddTagInput.value.trim().toLowerCase().replace(/^#/, '');
       elAddTagInput.classList.add("hidden");
       elAddTagBtn.classList.remove("hidden");
+      elTagAutocompletePopup.classList.add("hidden");
 
-      if (val) {
+      if (val && !(item.tags || []).includes(val)) {
         const updated = [...(item.tags || []), val];
         await updateDocumentChips(item.id, { tags: updated });
       }
+    }
+
+    let draggedTagIdx = null;
+
+    function handleTagDragStart(e, idx) {
+      if (currentMode !== "edit") return;
+      draggedTagIdx = idx;
+      draggedItemId = null; // Clear tree drag state
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", idx);
+    }
+
+    function handleTagDragOver(e) {
+      if (currentMode !== "edit") return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    }
+
+    async function handleTagDrop(e, targetIdx) {
+      e.stopPropagation();
+      if (currentMode !== "edit") return;
+      e.preventDefault();
+      if (draggedTagIdx === null || draggedTagIdx === targetIdx) return;
+      if (!activeItemId) return;
+      
+      const item = itemsList.find(i => i.id === activeItemId);
+      if (!item) return;
+
+      const newTags = [...(item.tags || [])];
+      const [removed] = newTags.splice(draggedTagIdx, 1);
+      newTags.splice(targetIdx, 0, removed);
+
+      await updateDocumentChips(item.id, { tags: newTags });
+      draggedTagIdx = null;
+    }
+
+    function getAllExistingTags() {
+      const allTags = new Set();
+      itemsList.forEach(item => {
+        (item.tags || []).forEach(t => allTags.add(t.toLowerCase()));
+      });
+      return Array.from(allTags);
+    }
+
+    function handleTagAutocomplete() {
+      const input = elAddTagInput.value.trim().toLowerCase().replace(/^#/, '');
+      const existingTags = getAllExistingTags();
+      
+      if (!input) {
+        elTagAutocompletePopup.classList.add("hidden");
+        return;
+      }
+
+      const matches = existingTags.filter(t => t.includes(input));
+      
+      if (matches.length === 0) {
+        elTagAutocompletePopup.classList.add("hidden");
+        return;
+      }
+
+      elTagAutocompletePopup.innerHTML = "";
+      matches.forEach(m => {
+        const div = document.createElement("div");
+        div.className = "popup-menu-item";
+        div.innerText = `#${m}`;
+        div.onmousedown = (e) => {
+          e.preventDefault(); // Prevent input blur
+          elAddTagInput.value = m;
+          commitNewTag();
+        };
+        elTagAutocompletePopup.appendChild(div);
+      });
+
+      elTagAutocompletePopup.classList.remove("hidden");
     }
 
     async function removeAliasChip(idx) {

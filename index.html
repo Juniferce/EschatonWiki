@@ -1122,6 +1122,34 @@
     </div>
   </div>
 
+  <!-- Create Page Reference (Shortcut) Modal -->
+  <div id="reference-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Create Page Reference</span>
+        <button onclick="toggleReferenceModal(false)">X</button>
+      </div>
+
+      <div class="form-group">
+        <label>Target Page Name</label>
+        <div style="position: relative;">
+          <input type="text" id="ref-target-input" placeholder="Type to search pages..." autocomplete="off" oninput="handleRefAutocomplete()" />
+          <div id="ref-autocomplete-popup" class="popup-menu hidden" style="top: 100%; left: 0; right: 0; margin-top: 2px; max-height: 140px;"></div>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Shortcut Alias (Optional)</label>
+        <input type="text" id="ref-alias-input" placeholder="Leave blank to use original name..." />
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+        <button type="button" onclick="toggleReferenceModal(false)">Cancel</button>
+        <button type="button" onclick="savePageReference()" style="background-color: #111; color: #fff;">Create Shortcut</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notice -->
   <div id="toast" class="toast hidden"></div>
 
@@ -1132,6 +1160,7 @@
     <div class="context-menu-item" onclick="handleContextAction('rename')">Rename</div>
     <div class="context-menu-item" onclick="handleContextAction('subpage')">+ New Sub-page</div>
     <div class="context-menu-item" onclick="handleContextAction('subfolder')">+ New Sub-folder</div>
+    <div class="context-menu-item" onclick="handleContextAction('reference')">+ Page Reference</div>
     <div class="context-menu-divider"></div>
     <div class="context-menu-item danger" onclick="handleContextAction('delete')">Delete</div>
   </div>
@@ -1244,6 +1273,12 @@
     const elColorModal = document.getElementById("color-modal");
     const elColorInput = document.getElementById("color-input");
 
+    const elRefModal = document.getElementById("reference-modal");
+    const elRefTargetInput = document.getElementById("ref-target-input");
+    const elRefAliasInput = document.getElementById("ref-alias-input");
+    const elRefAutocompletePopup = document.getElementById("ref-autocomplete-popup");
+    let refTargetPageId = null;
+
     const elProfileModal = document.getElementById("profile-modal");
     const elProfileUsername = document.getElementById("profile-username");
     const elProfileColorInput = document.getElementById("profile-color-input");
@@ -1267,6 +1302,7 @@
         hideSlashPopup();
         hideWikilinkPopup();
         if (elTagAutocompletePopup) elTagAutocompletePopup.classList.add("hidden");
+        if (elRefAutocompletePopup) elRefAutocompletePopup.classList.add("hidden");
       });
 
       window.addEventListener("keydown", (e) => {
@@ -1276,6 +1312,7 @@
           hideSlashPopup();
           hideWikilinkPopup();
           if (elTagAutocompletePopup) elTagAutocompletePopup.classList.add("hidden");
+          if (elRefAutocompletePopup) elRefAutocompletePopup.classList.add("hidden");
         }
       });
     });
@@ -1362,10 +1399,11 @@
             tags: Array.isArray(data.tags) ? data.tags : [],
             aliases: Array.isArray(data.aliases) ? data.aliases : [],
             type: data.type || "page",
-            icon: data.icon || (data.type === 'folder' ? 'f' : 'p'),
+            icon: data.icon || (data.type === 'folder' ? 'f' : (data.type === 'shortcut' ? '↗' : 'p')),
             color: data.color || null,
             parentId: data.parentId || null,
             order: typeof data.order === "number" ? data.order : 0,
+            targetId: data.targetId || null,
             updatedAt: data.updatedAt,
             updatedBy: data.updatedBy || "Unknown"
           });
@@ -1563,28 +1601,37 @@
       }
 
       let filteredItems = itemsList;
-      const q = searchQuery.trim().toLowerCase();
+      const qRaw = searchQuery.trim().toLowerCase();
 
-      if (q !== "") {
-        if (q.startsWith("#")) {
-          const tagTerm = q.slice(1);
-          filteredItems = itemsList.filter(i => {
-            const hasTag = (i.tags || []).some(t => t.toLowerCase().includes(tagTerm));
-            const hasContentTag = (i.content || "").toLowerCase().includes("#" + tagTerm);
-            return hasTag || hasContentTag;
-          });
-        } else {
-          filteredItems = itemsList.filter(i => 
-            i.title.toLowerCase().includes(q) || 
-            i.content.toLowerCase().includes(q) ||
-            (i.tags || []).some(t => t.toLowerCase().includes(q)) ||
-            (i.aliases || []).some(a => a.toLowerCase().includes(q))
-          );
-        }
+      if (qRaw !== "") {
+        const tagMatches = qRaw.match(/#[a-z0-9_-]+/g) || [];
+        const requiredTags = tagMatches.map(t => t.slice(1));
+        const textQuery = qRaw.replace(/#[a-z0-9_-]+/g, '').trim();
+
+        filteredItems = itemsList.filter(i => {
+          let matchesTags = true;
+          if (requiredTags.length > 0) {
+            const itemTags = (i.tags || []).map(t => t.toLowerCase());
+            const contentStr = (i.content || "").toLowerCase();
+            matchesTags = requiredTags.every(rt =>
+              itemTags.some(it => it.includes(rt)) || contentStr.includes(`#${rt}`)
+            );
+          }
+
+          let matchesText = true;
+          if (textQuery) {
+            matchesText = i.title.toLowerCase().includes(textQuery) || 
+                          (i.content || "").toLowerCase().includes(textQuery) ||
+                          (i.tags || []).some(t => t.toLowerCase().includes(textQuery)) ||
+                          (i.aliases || []).some(a => a.toLowerCase().includes(textQuery));
+          }
+
+          return matchesTags && matchesText;
+        });
       }
 
       const rootItems = filteredItems
-        .filter(i => q !== "" ? true : i.parentId === null)
+        .filter(i => qRaw !== "" ? true : i.parentId === null)
         .sort((a, b) => a.order - b.order);
 
       if (rootItems.length === 0) {
@@ -1682,8 +1729,16 @@
         }
 
         lastClickedId = item.id;
-        activeItemId = item.id;
-        updateUserPresence();
+        
+        // Folders do not change the active page viewer
+        if (item.type === 'page') {
+          activeItemId = item.id;
+          updateUserPresence();
+        } else if (item.type === 'shortcut' && item.targetId) {
+          activeItemId = item.targetId;
+          updateUserPresence();
+        }
+
         renderTree();
         renderActiveItem();
       };
@@ -1903,6 +1958,88 @@
         createNewItem('page', targetId);
       } else if (action === "subfolder") {
         createNewItem('folder', targetId);
+      } else if (action === "reference") {
+        toggleReferenceModal(true);
+      }
+    }
+
+    // Page Reference Modal Logic
+    function toggleReferenceModal(show) {
+      if (show) {
+        elRefTargetInput.value = "";
+        elRefAliasInput.value = "";
+        refTargetPageId = null;
+        elRefAutocompletePopup.classList.add("hidden");
+        elRefModal.classList.remove("hidden");
+      } else {
+        elRefModal.classList.add("hidden");
+      }
+    }
+
+    function handleRefAutocomplete() {
+      const q = elRefTargetInput.value.toLowerCase().trim();
+      if (!q) {
+        elRefAutocompletePopup.classList.add("hidden");
+        return;
+      }
+      
+      const matches = itemsList.filter(i => i.type === 'page' && i.title.toLowerCase().includes(q));
+      
+      if (matches.length === 0) {
+        elRefAutocompletePopup.classList.add("hidden");
+        return;
+      }
+      
+      elRefAutocompletePopup.innerHTML = "";
+      matches.forEach(m => {
+        const div = document.createElement("div");
+        div.className = "popup-menu-item";
+        div.innerText = m.title;
+        div.onmousedown = (e) => {
+          e.preventDefault();
+          elRefTargetInput.value = m.title;
+          refTargetPageId = m.id;
+          elRefAutocompletePopup.classList.add("hidden");
+        };
+        elRefAutocompletePopup.appendChild(div);
+      });
+      elRefAutocompletePopup.classList.remove("hidden");
+    }
+
+    async function savePageReference() {
+      if (!refTargetPageId) {
+        showToast("Please select a valid target page from the list.");
+        return;
+      }
+      
+      const targetItem = itemsList.find(i => i.id === refTargetPageId);
+      if (!targetItem) return;
+
+      const alias = elRefAliasInput.value.trim();
+      const title = alias || targetItem.title;
+      const parentId = modalTargetId;
+      const siblings = itemsList.filter(i => i.parentId === parentId);
+      const nextOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.order)) + 1 : 0;
+
+      try {
+        await db.collection("pages").add({
+          type: "shortcut",
+          targetId: refTargetPageId,
+          title: title,
+          icon: "↗",
+          color: targetItem.color || null,
+          parentId: parentId,
+          order: nextOrder,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: getUserDisplayName(userProfile)
+        });
+        
+        if (parentId) expandedNodeIds.add(parentId);
+        showToast("Page reference created");
+        toggleReferenceModal(false);
+      } catch(err) {
+        console.error("Reference error:", err);
+        showToast("Error creating page reference");
       }
     }
 

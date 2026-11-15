@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>THE Eschaton Wiki</title>
   
+  <!-- Add dummy favicon to prevent 404 console errors -->
+  <link rel="icon" href="data:,">
+  
   <style>
     /* Clean, barebones monochrome aesthetic */
     * {
@@ -2487,12 +2490,16 @@
       if (!item) return;
 
       const val = elAddAliasInput.value.trim();
+      elAddAliasInput.value = ""; // Clear input to prevent duplicate firing on blur
       elAddAliasInput.classList.add("hidden");
       elAddAliasBtn.classList.remove("hidden");
 
       if (val) {
-        const updated = [...(item.aliases || []), val];
-        await updateDocumentChips(item.id, { aliases: updated });
+        // Prevent exact duplicates locally as well
+        if (!(item.aliases || []).includes(val)) {
+          const updated = [...(item.aliases || []), val];
+          await updateDocumentChips(item.id, { aliases: updated });
+        }
       }
     }
 
@@ -2502,6 +2509,7 @@
       if (!item) return;
 
       const val = elAddTagInput.value.trim().toLowerCase().replace(/^#/, '');
+      elAddTagInput.value = ""; // Clear input to prevent duplicate firing on blur
       elAddTagInput.classList.add("hidden");
       elAddTagBtn.classList.remove("hidden");
       elTagAutocompletePopup.classList.add("hidden");
